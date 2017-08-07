@@ -1,0 +1,16 @@
+{
+	"name": "oldSchool", 
+	"version": "0.4.7",
+	"main": "main.js",
+	"dependencies" : {
+		"request": "*",
+		"nodejs-websocket": "*",
+		"dateformat": "*",
+		"marked": "*",
+		"node-emoji": "*",
+		"daverss": "*",
+		"daves3": "*", 
+		"daveopml": "*",
+		"daveutils": "*"
+		}
+	}
