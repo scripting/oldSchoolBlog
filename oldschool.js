@@ -1,4 +1,7 @@
-var myVersion = "0.4.7", myProductName = "oldSchool", myPort = 1400;  
+var myVersion = "0.4.11", myProductName = "oldSchool";  
+
+exports.init = init;
+exports.publishBlog = publishBlog;
 
 const rss = require ("daverss");
 
@@ -24,7 +27,20 @@ var flBackgroundBuilds = false;
 var pingLog = [], pathPingLog = "/scripting.com/misc/pingLog.json", flPingLogChanged = false, flPingLogEnabled = true;
 var fnameConfig = "config.json";
 
-var config;
+var config = { //defaults
+	port: 1400,
+	rssFname: "rss.xml",
+	rssJsonFname: "rss.json",
+	indexHtmlFname: "index.html",
+	indexJsonFname: "index.json",
+	facebookRssFname: "fb/rss.xml",
+	calendarFname: "calendar.json",
+	pagesFolder: "data/pages/",
+	daysFolder: "data/days/",
+	itemsFolder: "data/items/",
+	blogs: {
+		}
+	};
 
 function getPermalinkString (when) { //7/9/17 by DW
 	var pattern = "hhMMss";
@@ -735,7 +751,10 @@ function readConfig (callback) {
 	fs.readFile (fnameConfig, function (err, data) {
 		if (!err) {
 			try {
-				config = JSON.parse (data);
+				var jstruct = JSON.parse (data.toString ());
+				for (var x in jstruct) {
+					config [x] = jstruct [x];
+					}
 				}
 			catch (err) {
 				console.log ("readConfig: err.message == " + err.message);
@@ -746,9 +765,14 @@ function readConfig (callback) {
 			}
 		});
 	}
-function startup () {
-	console.log ("\n" + myProductName + " v" + myVersion + " running on port " + myPort + "\n");
+function init (configParam, callback) {
+	if (configParam !== undefined) {
+		for (x in configParam) {
+			config [x] = configParam [x];
+			}
+		}
 	readConfig (function () {
+		console.log ("\n" + myProductName + " v" + myVersion + " running on port " + config.port + "\n");
 		readPingLog (function () {
 			var whenLastSocketUpdate = undefined, lastSocketJsontext = undefined;
 			var flScheduledEveryMinute = false;
@@ -832,8 +856,8 @@ function startup () {
 						console.log ("handleRequest: tryError.message == " + err.message);
 						}
 					}
-				console.log ("startHttpServer: myPort == " + myPort);
-				http.createServer (httpServer).listen (myPort);
+				console.log ("startHttpServer: config.port == " + config.port);
+				http.createServer (httpServer).listen (config.port);
 				}
 			function initSocket (blogConfig) {
 				if (blogConfig.urlUpdateSocket !== undefined) {
@@ -927,7 +951,7 @@ function startup () {
 				}
 			function everyMinute () {
 				var now = new Date ();
-				console.log ("\n" + now.toLocaleTimeString () + ": " + myProductName + " v" + myVersion + ", running on port " + myPort);
+				console.log ("\n" + now.toLocaleTimeString () + ": " + myProductName + " v" + myVersion + ", running on port " + config.port);
 				}
 			function everySecond () {
 				if (flBackgroundBuilds) {
@@ -981,7 +1005,10 @@ function startup () {
 			
 			startHttpServer ();
 			setInterval (everySecond, 1000); 
+			
+			if (callback !== undefined) {
+				callback ();
+				}
 			});
 		});
 	}
-startup ();

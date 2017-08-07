@@ -1,0 +1,40 @@
+{
+	"blogs": {
+		"kim": {
+			"title": "Kim Parker's Blog",
+			"link": "http://bloatware.org/users/kim/",
+			"description": "I work for Bloatware, the best company in the world, now that I'm there!",
+			
+			"flReadLocalJsonFile": true,
+			"localJsonFilePath": "/Users/davewiner/Library/Application Support/instantDave2/data/blog.json",
+			
+			"basePath": "/bloatware.org/users/kim/",
+			"basePathItems": "/bloatware.org/users/kim/items/",
+			"baseUrl": "http://bloatware.org/users/kim/",
+			"language": "en-us",
+			"generator": "oldSchool v0.46f",
+			"docs": "http://cyber.law.harvard.edu/rss/rss.html",
+			"docsForJsonFeed": "https://github.com/scripting/Scripting-News/blob/master/rss-in-json/README.md",
+			"twitterScreenName": "kim_bloatware",
+			"facebookPageName": "Kim at Bloatware",
+			"maxFeedItems": 50,
+			"appDomain": "bloatware.org",
+			"flRssCloudEnabled": true,
+			"rssCloudDomain": "rpc.rsscloud.io",
+			"rssCloudPort": 5337,
+			"rssCloudPath": "/pleaseNotify",
+			"rssPingPath": "/ping",
+			"rssCloudRegisterProcedure": "",
+			"rssCloudProtocol": "http-post",
+			"customPages": [
+				],
+			"maxDaysOnHomePage": 25,
+			"flUploadItemsToS3": true, 
+			"urlHeaderImage": "http://scripting.com/2016/10/31/auroraBridge.png",
+			"flIncludeImageInMetadata": false,
+			"urlGlossaryOpml": "http://electricserver.scripting.com/users/davewiner/electric/glossary.opml",
+			"flGoogleAnalytics": true,
+			"idGoogleAccount": "UA-39531990-1"
+			}
+		}
+	}
