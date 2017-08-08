@@ -1,4 +1,4 @@
-var myVersion = "0.4.11", myProductName = "oldSchool";  
+var myVersion = "0.4.15", myProductName = "oldSchool";  
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -61,6 +61,15 @@ function httpReadUrl (url, callback) {
 	}
 function isDirectory (path) { //goes in utils
 	return (fs.statSync (path).isDirectory ());
+	}
+function fsWriteFile (f, s) { //8/8/17 by DW
+	utils.sureFilePath  (f, function () {
+		fs.writeFile (f, s, function (err) {
+			if (err) {
+				console.log ("fsWriteFile: err.message == " + err.message);
+				}
+			});
+		});
 	}
 function daysInMonth (theDay) { //goes in utils
 	return (new Date (theDay.getYear (), theDay.getMonth () + 1, 0).getDate ());
@@ -166,9 +175,7 @@ function publishBlog (jstruct, blogName, callback) {
 	var daysArray = new Array (), now = new Date ();
 	function savePublishedPage (relpath, pagetext) {
 		var f = config.pagesFolder + blogName + "/" + relpath;
-		utils.sureFilePath  (f, function () {
-			fs.writeFile (f, pagetext);
-			});
+		fsWriteFile (f, pagetext);
 		}
 	function findPublishedPage (relpath, callback) {
 		var f = config.pagesFolder + blogName + "/" + relpath;
@@ -200,17 +207,13 @@ function publishBlog (jstruct, blogName, callback) {
 		var relpath = utils.getDatePath (new Date (item.created), true) + getPermalinkString (item.created) + ".json"
 		
 		var f = config.itemsFolder + blogName + "/" + relpath;
-		utils.sureFilePath  (f, function () {
-			fs.writeFile (f, utils.jsonStringify (item));
-			});
+		fsWriteFile (f, utils.jsonStringify (item));
 		saveItemToS3 (relpath, item); //7/12/17 by DW
 		}
 	function saveDay (day) { //6/10/17 by DW
 		var relpath = utils.getDatePath (new Date (day.created), false) + ".json"
 		var f = config.daysFolder + blogName + "/" + relpath;
-		utils.sureFilePath  (f, function () {
-			fs.writeFile (f, utils.jsonStringify (day));
-			});
+		fsWriteFile (f, utils.jsonStringify (day));
 		}
 	function glossaryProcess (s) {
 		return (utils.multipleReplaceAll (s, blogConfig.glossary));
