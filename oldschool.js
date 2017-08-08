@@ -1,4 +1,4 @@
-var myVersion = "0.4.15", myProductName = "oldSchool";  
+var myVersion = "0.4.16", myProductName = "oldSchool";  
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -29,6 +29,7 @@ var fnameConfig = "config.json";
 
 var config = { //defaults
 	port: 1400,
+	flHttpEnabled: true,
 	rssFname: "rss.xml",
 	rssJsonFname: "rss.json",
 	indexHtmlFname: "index.html",
@@ -38,10 +39,18 @@ var config = { //defaults
 	pagesFolder: "data/pages/",
 	daysFolder: "data/days/",
 	itemsFolder: "data/items/",
+	debugMessageCallback: undefined, //8/8/17 by DW
 	blogs: {
 		}
 	};
 
+
+function debugMessage (theMessage) { //8/8/17 by DW
+	console.log (theMessage);
+	if (config.debugMessageCallback !== undefined) {
+		config.debugMessageCallback (theMessage);
+		}
+	}
 function getPermalinkString (when) { //7/9/17 by DW
 	var pattern = "hhMMss";
 	if (new Date (when) < new Date ("Sun Jul 09 2017 17:53:55 GMT")) {
@@ -66,7 +75,7 @@ function fsWriteFile (f, s) { //8/8/17 by DW
 	utils.sureFilePath  (f, function () {
 		fs.writeFile (f, s, function (err) {
 			if (err) {
-				console.log ("fsWriteFile: err.message == " + err.message);
+				debugMessage ("fsWriteFile: err.message == " + err.message);
 				}
 			});
 		});
@@ -119,10 +128,10 @@ function publishCalendarJson (blogConfig, callback) {
 	var path = blogConfig.basePath + config.calendarFname;
 	s3.newObject (path, utils.jsonStringify (blogConfig.calendar), "application/json", "public-read", function (err, data) {
 		if (err) {
-			console.log ("publishCalendarJson: path == " + path + ", err.message == " + err.message);
+			debugMessage ("publishCalendarJson: path == " + path + ", err.message == " + err.message);
 			}
 		else {
-			console.log ("published: " + blogConfig.baseUrl + config.calendarFname);
+			debugMessage ("published: " + blogConfig.baseUrl + config.calendarFname);
 			}
 		if (callback !== undefined) {
 			callback ();
@@ -138,7 +147,7 @@ function readCalendarJson (blogConfig, callback) {
 				blogConfig.calendar = JSON.parse (jsontext);
 				}
 			catch (err) {
-				console.log ("readCalendarJson: err.message == " + err.message);
+				debugMessage ("readCalendarJson: err.message == " + err.message);
 				blogConfig.calendar = new Object ();
 				}
 			}
@@ -163,7 +172,7 @@ function readPingLog (callback) {
 function writePingLog (callback) {
 	s3.newObject (pathPingLog, utils.jsonStringify (pingLog), "application/json", "public-read", function (err, data) {
 		if (err) {
-			console.log ("writePingLog: err.message == " + err.message);
+			debugMessage ("writePingLog: err.message == " + err.message);
 			}
 		if (callback !== undefined) {
 			callback ();
@@ -194,7 +203,7 @@ function publishBlog (jstruct, blogName, callback) {
 			var path = blogConfig.basePathItems + relpath;
 			s3.newObject (path, utils.jsonStringify (item), "application/json", "public-read", function (err, data) {
 				if (err) {
-					console.log ("saveItemToS3: path == " + path + ", err.message == " + err.message);
+					debugMessage ("saveItemToS3: path == " + path + ", err.message == " + err.message);
 					}
 				if (callback !== undefined) {
 					callback ();
@@ -337,10 +346,10 @@ function publishBlog (jstruct, blogName, callback) {
 				savePublishedPage (relpath, pagetable.bodytext);
 				s3.newObject (blogConfig.basePath + relpath, pagetext, "text/html", "public-read", function (err, data) {
 					if (err) {
-						console.log ("publishThroughTemplate: relpath == " + relpath + ", err.message == " + err.message);
+						debugMessage ("publishThroughTemplate: relpath == " + relpath + ", err.message == " + err.message);
 						}
 					else {
-						console.log ("published: " + blogConfig.baseUrl + relpath);
+						debugMessage ("published: " + blogConfig.baseUrl + relpath);
 						}
 					if (callback !== undefined) {
 						callback ();
@@ -538,7 +547,7 @@ function publishBlog (jstruct, blogName, callback) {
 		function ping (urlFeed) {
 			if (blogConfig.flRssCloudEnabled && (blogConfig.rssCloudProtocol == "http-post")) {
 				var urlServer = "http://" + blogConfig.rssCloudDomain + ":" + blogConfig.rssCloudPort + blogConfig.rssPingPath;
-				console.log ("ping: urlServer == " + urlServer + ", urlFeed == " + urlFeed);
+				debugMessage ("ping: urlServer == " + urlServer + ", urlFeed == " + urlFeed);
 				rss.cloudPing (urlServer, urlFeed, function (err, res, body) {
 					if (flPingLogEnabled) {
 						var message = undefined;
@@ -572,10 +581,10 @@ function publishBlog (jstruct, blogName, callback) {
 			var path = blogConfig.basePath + config.facebookRssFname;
 			s3.newObject (path, xmltext, "text/xml", "public-read", function (err, data) {
 				if (err) {
-					console.log ("pubFacebookRss: path == " + path + ", err.message == " + err.message);
+					debugMessage ("pubFacebookRss: path == " + path + ", err.message == " + err.message);
 					}
 				else {
-					console.log ("published: " + path);
+					debugMessage ("published: " + path);
 					ping (blogConfig.baseUrl + config.facebookRssFname);
 					}
 				if (callback !== undefined) {
@@ -591,10 +600,10 @@ function publishBlog (jstruct, blogName, callback) {
 			var path = path = blogConfig.basePath + config.rssFname;
 			s3.newObject (path, xmltext, "text/xml", "public-read", function (err, data) {
 				if (err) {
-					console.log ("publishRssFeed: path == " + path + ", err.message == " + err.message);
+					debugMessage ("publishRssFeed: path == " + path + ", err.message == " + err.message);
 					}
 				else {
-					console.log ("published: " + path);
+					debugMessage ("published: " + path);
 					ping (blogConfig.baseUrl + config.rssFname);
 					}
 				if (callback !== undefined) {
@@ -607,10 +616,10 @@ function publishBlog (jstruct, blogName, callback) {
 			var path = blogConfig.basePath + config.rssJsonFname;
 			s3.newObject (path, jsontext, "application/json", "public-read", function (err, data) {
 				if (err) {
-					console.log ("publishJsonFeed: path == " + path + ", err.message == " + err.message);
+					debugMessage ("publishJsonFeed: path == " + path + ", err.message == " + err.message);
 					}
 				else {
-					console.log ("published: " + path);
+					debugMessage ("published: " + path);
 					ping (blogConfig.baseUrl + config.rssJsonFname);
 					}
 				});
@@ -677,10 +686,10 @@ function publishBlog (jstruct, blogName, callback) {
 		var smallerStruct = copyOutlineWithoutExtras (jstruct);
 		s3.newObject (path, utils.jsonStringify (smallerStruct), "application/json", "public-read", function (err, data) {
 			if (err) {
-				console.log ("publishHomeJson: path == " + path + ", err.message == " + err.message);
+				debugMessage ("publishHomeJson: path == " + path + ", err.message == " + err.message);
 				}
 			else {
-				console.log ("published: " + path);
+				debugMessage ("published: " + path);
 				}
 			if (callback !== undefined) {
 				callback ();
@@ -742,7 +751,7 @@ function publishBlog (jstruct, blogName, callback) {
 				publishRssFeed ();
 				publishCustomPages ();
 				publishHomeJson (); //7/18/17 by DW
-				console.log ("publishBlog: ctsecs == " + utils.secondsSince (now));
+				debugMessage ("publishBlog: ctsecs == " + utils.secondsSince (now));
 				if (callback !== undefined) {
 					callback ();
 					}
@@ -760,7 +769,7 @@ function readConfig (callback) {
 					}
 				}
 			catch (err) {
-				console.log ("readConfig: err.message == " + err.message);
+				debugMessage ("readConfig: err.message == " + err.message);
 				}
 			}
 		if (callback !== undefined) {
@@ -775,7 +784,11 @@ function init (configParam, callback) {
 			}
 		}
 	readConfig (function () {
-		console.log ("\n" + myProductName + " v" + myVersion + " running on port " + config.port + "\n");
+		let portMessage = "";
+		if (config.flHttpEnabled) {
+			portMessage =  " running on port " + config.port;
+			}
+		debugMessage ("\n" + myProductName + " v" + myVersion + portMessage + "\n");
 		readPingLog (function () {
 			var whenLastSocketUpdate = undefined, lastSocketJsontext = undefined;
 			var flScheduledEveryMinute = false;
@@ -789,7 +802,7 @@ function init (configParam, callback) {
 					if (blogConfig.flReadLocalJsonFile) {
 						fs.readFile (blogConfig.localJsonFilePath, function (err, jsontext) {
 							if (err) {
-								console.log ("getBlogJsontext: err.message == " + err.message);
+								debugMessage ("getBlogJsontext: err.message == " + err.message);
 								callback (undefined);
 								}
 							else {
@@ -814,7 +827,7 @@ function init (configParam, callback) {
 						var parsedUrl = urlpack.parse (httpRequest.url, true), now = new Date ();
 						var lowerpath = parsedUrl.pathname.toLowerCase ();
 						
-						console.log ("httpServer: " + lowerpath);
+						debugMessage ("httpServer: " + lowerpath);
 						
 						switch (httpRequest.method) {
 							case "GET":
@@ -856,10 +869,10 @@ function init (configParam, callback) {
 						}
 					catch (err) {
 						doHttpReturn (503, "text/plain", err.message);
-						console.log ("handleRequest: tryError.message == " + err.message);
+						debugMessage ("handleRequest: tryError.message == " + err.message);
 						}
 					}
-				console.log ("startHttpServer: config.port == " + config.port);
+				debugMessage ("startHttpServer: config.port == " + config.port);
 				http.createServer (httpServer).listen (config.port);
 				}
 			function initSocket (blogConfig) {
@@ -868,7 +881,7 @@ function init (configParam, callback) {
 						blogConfig.mySocket = websocket.connect (blogConfig.urlUpdateSocket); 
 						blogConfig.mySocket.on ("connect", function () {
 							var msg = "watch " + blogConfig.urlJson;
-							console.log ("startSocket: \"" + msg + "\"");
+							debugMessage ("startSocket: \"" + msg + "\"");
 							blogConfig.mySocket.send (msg);
 							});
 						blogConfig.mySocket.on ("text", function (s) {
@@ -881,16 +894,16 @@ function init (configParam, callback) {
 								}
 							});
 						blogConfig.mySocket.on ("close", function (code, reason) {
-							console.log ("startSocket: blogConfig.mySocket was closed.");
+							debugMessage ("startSocket: blogConfig.mySocket was closed.");
 							blogConfig.mySocket = undefined;
 							});
 						blogConfig.mySocket.on ("error", function (err) {
-							console.log ("blogConfig.mySocket received an error");
+							debugMessage ("blogConfig.mySocket received an error");
 							});
 						}
 					if (blogConfig.mySocket === undefined) {
 						startSocket (function (jsontext) {
-							console.log ("\n" + new Date ().toLocaleTimeString () + ": blog \"" + blogConfig.title + "\" updated, " + jsontext.length + " chars.");
+							debugMessage ("\n" + new Date ().toLocaleTimeString () + ": blog \"" + blogConfig.title + "\" updated, " + jsontext.length + " chars.");
 							blogConfig.whenLastSocketUpdate = new Date ();
 							blogConfig.lastSocketJsontext = jsontext;
 							});
@@ -954,7 +967,7 @@ function init (configParam, callback) {
 				}
 			function everyMinute () {
 				var now = new Date ();
-				console.log ("\n" + now.toLocaleTimeString () + ": " + myProductName + " v" + myVersion + ", running on port " + config.port);
+				debugMessage ("\n" + now.toLocaleTimeString () + ": " + myProductName + " v" + myVersion + ", running on port " + config.port);
 				}
 			function everySecond () {
 				if (flBackgroundBuilds) {
@@ -963,7 +976,7 @@ function init (configParam, callback) {
 						if ((blogConfig.whenLastSocketUpdate !== undefined) && (blogConfig.lastSocketJsontext !== undefined)) {
 							var secs = utils.secondsSince (blogConfig.whenLastSocketUpdate);
 							if (secs >= 30) {
-								console.log ("everySecond: It has been " + secs + " since we received the last update.");
+								debugMessage ("everySecond: It has been " + secs + " since we received the last update.");
 								blogConfig.whenLastSocketUpdate = undefined; //consume the update
 								try {
 									var jstruct = JSON.parse (lastSocketJsontext);
@@ -972,7 +985,7 @@ function init (configParam, callback) {
 									publishBlog (jstruct, x);
 									}
 								catch (err) {
-									console.log ("everySecond: err.message == " + err.message);
+									debugMessage ("everySecond: err.message == " + err.message);
 									blogConfig.lastSocketJsontext = undefined;
 									}
 								}
@@ -1006,7 +1019,9 @@ function init (configParam, callback) {
 				initBlog (x);
 				}
 			
-			startHttpServer ();
+			if (config.flHttpEnabled) {
+				startHttpServer ();
+				}
 			setInterval (everySecond, 1000); 
 			
 			if (callback !== undefined) {
