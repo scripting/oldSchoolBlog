@@ -1,4 +1,4 @@
-var myVersion = "0.4.16", myProductName = "oldSchool";  
+var myVersion = "0.4.17", myProductName = "oldSchool";  
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -753,7 +753,7 @@ function publishBlog (jstruct, blogName, callback) {
 				publishHomeJson (); //7/18/17 by DW
 				debugMessage ("publishBlog: ctsecs == " + utils.secondsSince (now));
 				if (callback !== undefined) {
-					callback ();
+					callback (blogConfig);
 					}
 				});
 			});
