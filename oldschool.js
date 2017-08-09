@@ -1,4 +1,4 @@
-var myVersion = "0.4.17", myProductName = "oldSchool";  
+var myVersion = "0.4.19", myProductName = "oldSchool";  
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -197,7 +197,6 @@ function publishBlog (jstruct, blogName, callback) {
 				}
 			});
 		}
-	
 	function saveItemToS3 (relpath, item, callback) { //7/12/17 by DW
 		if (blogConfig.flUploadItemsToS3) {
 			var path = blogConfig.basePathItems + relpath;
@@ -211,7 +210,6 @@ function publishBlog (jstruct, blogName, callback) {
 				});
 			}
 		}
-	
 	function saveItem (item) { //6/4/17 by DW
 		var relpath = utils.getDatePath (new Date (item.created), true) + getPermalinkString (item.created) + ".json"
 		
@@ -227,7 +225,6 @@ function publishBlog (jstruct, blogName, callback) {
 	function glossaryProcess (s) {
 		return (utils.multipleReplaceAll (s, blogConfig.glossary));
 		}
-	
 	function publishThroughTemplate (relpath, pagetitle, htmltext, callback) {
 		function getSocialMediaLinks () {
 			var htmltext = "", indentlevel = 0, head = blogConfig.jstruct.head;
@@ -743,6 +740,11 @@ function publishBlog (jstruct, blogName, callback) {
 			}
 		}
 	
+	blogConfig.jstruct = jstruct; //8/8/17 by DW
+	blogConfig.ownerFacebookAccount = jstruct.head.ownerFacebookAccount; //5/26/17 by DW
+	blogConfig.ownerGithubAccount = jstruct.head.ownerGithubAccount; //5/26/17 by DW
+	blogConfig.ownerLinkedinAccount = jstruct.head.ownerLinkedinAccount; //5/26/17 by DW
+	
 	getBlogGlossary (function () {
 		getBlogTemplate (function () {
 			publishNextDay (0, function () { //callback runs when all daily pages have been built
@@ -946,23 +948,8 @@ function init (configParam, callback) {
 						});
 					}
 				readCalendarJson (blogConfig, function () {
-					
 					getBlogHtmlArchive (function () {
-						getBlogJsontext (blogConfig, function (jsontext) {
-							var jstruct = JSON.parse (jsontext);
-							blogConfig.urlUpdateSocket = jstruct.head.urlUpdateSocket;
-							
-							blogConfig.ownerFacebookAccount = jstruct.head.ownerFacebookAccount; //5/26/17 by DW
-							blogConfig.ownerGithubAccount = jstruct.head.ownerGithubAccount; //5/26/17 by DW
-							blogConfig.ownerLinkedinAccount = jstruct.head.ownerLinkedinAccount; //5/26/17 by DW
-							
-							blogConfig.jstruct = jstruct; //5/15/17 by DW
-							publishBlog (jstruct, blogName, function () {
-								initSocket (blogConfig);
-								});
-							});
 						});
-					
 					});
 				}
 			function everyMinute () {
