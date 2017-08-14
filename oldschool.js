@@ -1,4 +1,4 @@
-var myVersion = "0.4.19", myProductName = "oldSchool";  
+var myVersion = "0.4.23", myProductName = "oldSchool";  
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -44,6 +44,11 @@ var config = { //defaults
 		}
 	};
 
+
+
+function publishFile (path, data, type, acl, callback, metadata) { //8/14/17 by DW
+	s3.newObject (path, data, type, acl, callback, metadata);
+	}
 
 function debugMessage (theMessage) { //8/8/17 by DW
 	console.log (theMessage);
@@ -126,7 +131,7 @@ function addDayToCalendar (blogConfig, theDay, url) {
 	}
 function publishCalendarJson (blogConfig, callback) {
 	var path = blogConfig.basePath + config.calendarFname;
-	s3.newObject (path, utils.jsonStringify (blogConfig.calendar), "application/json", "public-read", function (err, data) {
+	publishFile (path, utils.jsonStringify (blogConfig.calendar), "application/json", "public-read", function (err, data) {
 		if (err) {
 			debugMessage ("publishCalendarJson: path == " + path + ", err.message == " + err.message);
 			}
@@ -179,7 +184,8 @@ function writePingLog (callback) {
 			}
 		});
 	}
-function publishBlog (jstruct, blogName, callback) {
+function publishBlog (jstruct, options, callback) {
+	var blogName = options.blogName; //8/14/17 by DW
 	var blogConfig = config.blogs [blogName];
 	var daysArray = new Array (), now = new Date ();
 	function savePublishedPage (relpath, pagetext) {
@@ -200,7 +206,7 @@ function publishBlog (jstruct, blogName, callback) {
 	function saveItemToS3 (relpath, item, callback) { //7/12/17 by DW
 		if (blogConfig.flUploadItemsToS3) {
 			var path = blogConfig.basePathItems + relpath;
-			s3.newObject (path, utils.jsonStringify (item), "application/json", "public-read", function (err, data) {
+			publishFile (path, utils.jsonStringify (item), "application/json", "public-read", function (err, data) {
 				if (err) {
 					debugMessage ("saveItemToS3: path == " + path + ", err.message == " + err.message);
 					}
@@ -341,7 +347,7 @@ function publishBlog (jstruct, blogName, callback) {
 		findPublishedPage (relpath, function (savedtext) {
 			if (savedtext != pagetable.bodytext) {
 				savePublishedPage (relpath, pagetable.bodytext);
-				s3.newObject (blogConfig.basePath + relpath, pagetext, "text/html", "public-read", function (err, data) {
+				publishFile (blogConfig.basePath + relpath, pagetext, "text/html", "public-read", function (err, data) {
 					if (err) {
 						debugMessage ("publishThroughTemplate: relpath == " + relpath + ", err.message == " + err.message);
 						}
@@ -576,7 +582,7 @@ function publishBlog (jstruct, blogName, callback) {
 			var xmltext = rss.buildRssFeed (myHeadElements, rssHistory);
 			
 			var path = blogConfig.basePath + config.facebookRssFname;
-			s3.newObject (path, xmltext, "text/xml", "public-read", function (err, data) {
+			publishFile (path, xmltext, "text/xml", "public-read", function (err, data) {
 				if (err) {
 					debugMessage ("pubFacebookRss: path == " + path + ", err.message == " + err.message);
 					}
@@ -595,7 +601,7 @@ function publishBlog (jstruct, blogName, callback) {
 		function pubRss (headElements, historyArray) {
 			var xmltext = rss.buildRssFeed (headElements, rssHistory);
 			var path = path = blogConfig.basePath + config.rssFname;
-			s3.newObject (path, xmltext, "text/xml", "public-read", function (err, data) {
+			publishFile (path, xmltext, "text/xml", "public-read", function (err, data) {
 				if (err) {
 					debugMessage ("publishRssFeed: path == " + path + ", err.message == " + err.message);
 					}
@@ -611,7 +617,7 @@ function publishBlog (jstruct, blogName, callback) {
 		function pubJson (headElements, historyArray) {
 			var jsontext = rss.buildJsonFeed (headElements, historyArray);
 			var path = blogConfig.basePath + config.rssJsonFname;
-			s3.newObject (path, jsontext, "application/json", "public-read", function (err, data) {
+			publishFile (path, jsontext, "application/json", "public-read", function (err, data) {
 				if (err) {
 					debugMessage ("publishJsonFeed: path == " + path + ", err.message == " + err.message);
 					}
@@ -681,7 +687,7 @@ function publishBlog (jstruct, blogName, callback) {
 			return (smallerStruct);
 			}
 		var smallerStruct = copyOutlineWithoutExtras (jstruct);
-		s3.newObject (path, utils.jsonStringify (smallerStruct), "application/json", "public-read", function (err, data) {
+		publishFile (path, utils.jsonStringify (smallerStruct), "application/json", "public-read", function (err, data) {
 			if (err) {
 				debugMessage ("publishHomeJson: path == " + path + ", err.message == " + err.message);
 				}
@@ -848,7 +854,7 @@ function init (configParam, callback) {
 													var jstruct = JSON.parse (jsontext);
 													blogConfig.lastSocketJsontext = undefined; //consume it
 													blogConfig.jstruct = jstruct; //5/15/17 by DW
-													publishBlog (jstruct, blogName, function () {
+													publishBlog (jstruct, {blogName: blogName}, function () {
 														doHttpReturn (200, "text/plain", blogConfig.baseUrl);
 														});
 													}
@@ -954,7 +960,11 @@ function init (configParam, callback) {
 				}
 			function everyMinute () {
 				var now = new Date ();
-				debugMessage ("\n" + now.toLocaleTimeString () + ": " + myProductName + " v" + myVersion + ", running on port " + config.port);
+				var portpart = "";
+				if (config.flHttpEnabled) { //8/14/17 by DW
+					portpart =  ", running on port " + config.port;
+					}
+				debugMessage ("\n" + now.toLocaleTimeString () + ": " + myProductName + " v" + myVersion + portpart);
 				}
 			function everySecond () {
 				if (flBackgroundBuilds) {
@@ -969,7 +979,7 @@ function init (configParam, callback) {
 									var jstruct = JSON.parse (lastSocketJsontext);
 									blogConfig.lastSocketJsontext = undefined;
 									blogConfig.jstruct = jstruct; //5/15/17 by DW
-									publishBlog (jstruct, x);
+									publishBlog (jstruct, {blogName: x});
 									}
 								catch (err) {
 									debugMessage ("everySecond: err.message == " + err.message);
