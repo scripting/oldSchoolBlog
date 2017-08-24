@@ -1,4 +1,4 @@
-var myVersion = "0.4.23", myProductName = "oldSchool";  
+var myVersion = "0.4.28", myProductName = "oldSchool";  
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -546,7 +546,25 @@ function publishBlog (jstruct, options, callback) {
 			visit (parent);
 			return (htmltext)
 			}
-		
+		function pingForUser (callback) { //8/17/17 by DW
+			function doPing () {
+				httpReadUrl (options.urlToPing, function (s) {
+					debugMessage ("pingForUser: options.urlToPing == " + options.urlToPing + ", s == " + s);
+					if (callback !== undefined) {
+						callback ();
+						}
+					});
+				}
+			try {
+				if (options.urlToPing !== undefined) {
+					if (options.urlToPing.length > 0) {
+						setTimeout (doPing, 100);
+						}
+					}
+				}
+			catch (err) {
+				}
+			}
 		function ping (urlFeed) {
 			if (blogConfig.flRssCloudEnabled && (blogConfig.rssCloudProtocol == "http-post")) {
 				var urlServer = "http://" + blogConfig.rssCloudDomain + ":" + blogConfig.rssCloudPort + blogConfig.rssPingPath;
@@ -570,7 +588,6 @@ function publishBlog (jstruct, options, callback) {
 					});
 				}
 			}
-		
 		function pubFacebookRss (headElements, rssHistory) { //7/4/17 by DW
 			var myHeadElements = new Object ();
 			utils.copyScalars (headElements, myHeadElements);
@@ -598,6 +615,26 @@ function publishBlog (jstruct, options, callback) {
 			
 			
 			}
+		
+		function processOutline (theOutline) { //8/24/17; 12:22:51 PM by DW
+			let theCopy = JSON.parse (JSON.stringify (theOutline));
+			function visit (parent) {
+				if (parent.text !== undefined) {
+					parent.text = emojiProcess (glossaryProcess (parent.text));
+					}
+				if (parent.subs !== undefined) {
+					for (var i = 0; i < parent.subs.length; i++) {
+						visit (parent.subs [i]);
+						}
+					}
+				}
+			visit (theCopy);
+			
+			debugMessage ("processOutline: returning == " + utils.jsonStringify (theCopy));
+			
+			return (theCopy);
+			}
+		
 		function pubRss (headElements, historyArray) {
 			var xmltext = rss.buildRssFeed (headElements, rssHistory);
 			var path = path = blogConfig.basePath + config.rssFname;
@@ -624,6 +661,7 @@ function publishBlog (jstruct, options, callback) {
 				else {
 					debugMessage ("published: " + path);
 					ping (blogConfig.baseUrl + config.rssJsonFname);
+					pingForUser (); //8/17/17 by DW
 					}
 				});
 			}
@@ -632,6 +670,7 @@ function publishBlog (jstruct, options, callback) {
 			headElements = new Object ();
 			utils.copyScalars (blogConfig, headElements);
 			utils.copyScalars (blogConfig.jstruct.head, headElements);
+			headElements.generator = myProductName + " v" + myVersion; //8/24/17 by DW
 		for (var i = 0; i < daysArray.length; i++) {
 			var day = daysArray [i];
 			for (var j = 0; j < day.subs.length; j++) {
@@ -643,7 +682,7 @@ function publishBlog (jstruct, options, callback) {
 					obj.title = item.text;
 					obj.text = getSubsText (item);
 					}
-				obj.outline = item; //5/12/17 by DW
+				obj.outline = processOutline (item); //5/12/17 by DW
 				obj.link = item.permalink;
 				obj.pubDate = item.created;
 				obj.guid = {flPermalink: true, value: item.permalink};
@@ -737,35 +776,40 @@ function publishBlog (jstruct, options, callback) {
 			});
 		}
 	
-	for (var i = 0; i < jstruct.body.subs.length; i++) {
-		var month = jstruct.body.subs [i];
-		for (var j = 0; j < month.subs.length; j++) {
-			var day = month.subs [j];
-			daysArray [daysArray.length] = day;
-			saveDay (day); ///6/10/17 by DW
-			}
+	if (blogConfig === undefined) { //8/21/17 by DW
+		debugMessage ("publishBlog: can't publish because there is no blog named \"" + blogName + ".\"");
 		}
-	
-	blogConfig.jstruct = jstruct; //8/8/17 by DW
-	blogConfig.ownerFacebookAccount = jstruct.head.ownerFacebookAccount; //5/26/17 by DW
-	blogConfig.ownerGithubAccount = jstruct.head.ownerGithubAccount; //5/26/17 by DW
-	blogConfig.ownerLinkedinAccount = jstruct.head.ownerLinkedinAccount; //5/26/17 by DW
-	
-	getBlogGlossary (function () {
-		getBlogTemplate (function () {
-			publishNextDay (0, function () { //callback runs when all daily pages have been built
-				publishHomePage ();
-				publishMonthArchivePage ();
-				publishRssFeed ();
-				publishCustomPages ();
-				publishHomeJson (); //7/18/17 by DW
-				debugMessage ("publishBlog: ctsecs == " + utils.secondsSince (now));
-				if (callback !== undefined) {
-					callback (blogConfig);
-					}
+	else {
+		for (var i = 0; i < jstruct.body.subs.length; i++) {
+			var month = jstruct.body.subs [i];
+			for (var j = 0; j < month.subs.length; j++) {
+				var day = month.subs [j];
+				daysArray [daysArray.length] = day;
+				saveDay (day); ///6/10/17 by DW
+				}
+			}
+		
+		blogConfig.jstruct = jstruct; //8/8/17 by DW
+		blogConfig.ownerFacebookAccount = jstruct.head.ownerFacebookAccount; //5/26/17 by DW
+		blogConfig.ownerGithubAccount = jstruct.head.ownerGithubAccount; //5/26/17 by DW
+		blogConfig.ownerLinkedinAccount = jstruct.head.ownerLinkedinAccount; //5/26/17 by DW
+		
+		getBlogGlossary (function () {
+			getBlogTemplate (function () {
+				publishNextDay (0, function () { //callback runs when all daily pages have been built
+					publishHomePage ();
+					publishMonthArchivePage ();
+					publishRssFeed ();
+					publishCustomPages ();
+					publishHomeJson (); //7/18/17 by DW
+					debugMessage ("publishBlog: ctsecs == " + utils.secondsSince (now));
+					if (callback !== undefined) {
+						callback (blogConfig);
+						}
+					});
 				});
 			});
-		});
+		}
 	}
 function readConfig (callback) { 
 	fs.readFile (fnameConfig, function (err, data) {
