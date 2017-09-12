@@ -1,4 +1,4 @@
-var myVersion = "0.4.35", myProductName = "oldSchool";  
+var myVersion = "0.4.38", myProductName = "oldSchool";  
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -232,7 +232,7 @@ function publishBlog (jstruct, options, callback) {
 	function glossaryProcess (s) {
 		return (utils.multipleReplaceAll (s, blogConfig.glossary));
 		}
-	function publishThroughTemplate (relpath, pagetitle, htmltext, templatetext, callback) {
+	function publishThroughTemplate (relpath, pagetitle, htmltext, templatetext, addToConfig, callback) {
 		function getSocialMediaLinks () {
 			var htmltext = "", indentlevel = 0, head = blogConfig.jstruct.head;
 			function add (s) {
@@ -267,6 +267,9 @@ function publishBlog (jstruct, options, callback) {
 		function getConfigJson () { //don't copy socket and other big hairy system data
 			var myConfig = new Object ();
 			utils.copyScalars (blogConfig, myConfig);
+			if (addToConfig !== undefined) { //9/12/17 by DW
+				utils.copyScalars (addToConfig, myConfig);
+				}
 			
 			delete myConfig.mySocket;
 			delete myConfig.templatetext;
@@ -468,7 +471,7 @@ function publishBlog (jstruct, options, callback) {
 			htmltext: htmltext
 			}
 		
-		publishThroughTemplate (relpath, pagetitle, htmltext, undefined, function () {
+		publishThroughTemplate (relpath, pagetitle, htmltext, undefined, undefined, function () {
 			if (callback !== undefined) {
 				callback ();
 				}
@@ -498,7 +501,10 @@ function publishBlog (jstruct, options, callback) {
 			theDay = utils.dateYesterday (theDay);
 			}
 		
-		publishThroughTemplate (config.indexHtmlFname, pagetitle, htmltext, blogConfig.homePageTemplatetext, function () {
+		var addToConfig = {
+			flHomePage: true //so JS code can tell that it should add the tabs
+			};
+		publishThroughTemplate (config.indexHtmlFname, pagetitle, htmltext, blogConfig.homePageTemplatetext, addToConfig, function () {
 			var path = blogConfig.basePath + config.homeHtmlFname;
 			publishFile (path, htmltext, "text/html", "public-read", function (err, data) {
 				if (err) {
@@ -542,7 +548,7 @@ function publishBlog (jstruct, options, callback) {
 				}
 			return (htmltext);
 			}
-		publishThroughTemplate (relpath, pagetitle, getMonthlyHtml (), undefined, function () {
+		publishThroughTemplate (relpath, pagetitle, getMonthlyHtml (), undefined, undefined, function () {
 			if (callback !== undefined) {
 				callback ();
 				}
@@ -770,7 +776,7 @@ function publishBlog (jstruct, options, callback) {
 		}
 	function publishCustomPages (callback) {
 		function pubOnePage (path, pagetitle, htmltext, callback) {
-			publishThroughTemplate (path, pagetitle, htmltext, undefined, function () {
+			publishThroughTemplate (path, pagetitle, htmltext, undefined, undefined, function () {
 				if (callback !== undefined) {
 					callback ();
 					}
