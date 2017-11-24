@@ -1,7 +1,7 @@
 {
 	"name": "oldschoolblog", 
 	"description": "Blogging in the ways of the old school.",
-	"version": "0.4.38",
+	"version": "0.4.43",
 	"author": "Dave Winer <dave@smallpicture.com>",
 	"license": "MIT",
 	"repository": {

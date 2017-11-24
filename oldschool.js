@@ -1,4 +1,4 @@
-var myVersion = "0.4.38", myProductName = "oldSchool";  
+var myVersion = "0.4.43", myProductName = "oldSchool";  
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -58,11 +58,27 @@ function debugMessage (theMessage) { //8/8/17 by DW
 		}
 	}
 function getPermalinkString (when) { //7/9/17 by DW
-	var pattern = "hhMMss";
+	var pattern = "HHMMss", flUseDateFormat = false;
 	if (new Date (when) < new Date ("Sun Jul 09 2017 17:53:55 GMT")) {
 		pattern = "hhmmss";
+		flUseDateFormat = true;
 		}
-	return ("a" + dateFormat (when, pattern));
+	else {
+		if (new Date (when) < new Date ("Mon, 13 Nov 2017 03:56:28 GMT")) {
+			pattern = "hhMMss";
+			flUseDateFormat = true;
+			}
+		}
+	if (flUseDateFormat) {
+		return ("a" + dateFormat (when, pattern));
+		}
+	else {
+		function pad (num) {
+			return (utils.padWithZeros (num, 2));
+			}
+		var d = new Date (when);
+		return ("a" + pad (d.getUTCHours ()) + pad (d.getUTCMinutes ()) + pad (d.getUTCSeconds ()));
+		}
 	}
 function httpReadUrl (url, callback) {
 	request (url, function (error, response, data) {
@@ -280,6 +296,7 @@ function publishBlog (jstruct, options, callback) {
 				}
 			
 			myConfig.urlCalendar = blogConfig.baseUrl + config.calendarFname;
+			myConfig.now = new Date (); //9/28/17 by DW
 			
 			
 			return (utils.jsonStringify (myConfig));
@@ -656,7 +673,7 @@ function publishBlog (jstruct, options, callback) {
 			}
 		
 		function processOutline (theOutline) { //8/24/17 by DW
-			let theCopy = JSON.parse (JSON.stringify (theOutline));
+			var theCopy = JSON.parse (JSON.stringify (theOutline));
 			function visit (parent) {
 				if (parent.text !== undefined) {
 					parent.text = emojiProcess (glossaryProcess (parent.text));
@@ -891,7 +908,7 @@ function init (configParam, callback) {
 			}
 		}
 	readConfig (function () {
-		let portMessage = "";
+		var portMessage = "";
 		if (config.flHttpEnabled) {
 			portMessage =  " running on port " + config.port;
 			}
