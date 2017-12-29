@@ -1,4 +1,4 @@
-var myVersion = "0.4.43", myProductName = "oldSchool";  
+var myVersion = "0.5.2", myProductName = "oldSchool";  
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -391,6 +391,8 @@ function publishBlog (jstruct, options, callback) {
 				}
 			});
 		}
+	
+	
 	function publishDay (day, blogConfig, callback) {
 		var htmltext = "", indentlevel = 0, daypath = utils.getDatePath (new Date (day.created), false), relpath = daypath + ".html", path = blogConfig.basePath + relpath;
 		var urlpage = blogConfig.baseUrl + relpath;
@@ -402,7 +404,6 @@ function publishBlog (jstruct, options, callback) {
 			}
 		function getRenderedText (item, flTextIsTitle) {
 			var s = emojiProcess (glossaryProcess (item.text));
-			
 			
 			switch (item.type) {
 				case "link":
@@ -418,8 +419,16 @@ function publishBlog (jstruct, options, callback) {
 				}
 			
 			var ourLink = getPermalinkString (item.created); //7/9/17 by DW
+			
+			if (item.subs !== undefined) { //12/29/17 by DW
+				ourLink = utils.stringDelete (ourLink, 1, 1) + ".html";
+				item.permalink = blogConfig.baseUrl + utils.getDatePath (new Date (day.created), true) + ourLink;
+				}
+			else {
+				item.permalink = urlpage + "#" + ourLink;
+				}
+			
 			var title = "Direct link to this item.";
-			item.permalink = urlpage + "#" + ourLink;
 			
 			var imgHtml = "";
 			if (item.image !== undefined) {
@@ -430,7 +439,7 @@ function publishBlog (jstruct, options, callback) {
 				s = "<a href=\"" + item.permalink + "\"><span class=\"spTitleLink\">" + s + "</a></a>";
 				}
 			
-			s = "<a name=\"" + ourLink + "\"></a>" + imgHtml + s + "<span class=\"spPermaLink\"><a href=\"" + item.permalink + "\" title=\"" + title + "\">#</a></span>";
+			s = "<a name=\"" + item.permalink + "\"></a>" + imgHtml + s + "<span class=\"spPermaLink\"><a href=\"" + item.permalink + "\" title=\"" + title + "\">#</a></span>";
 			
 			
 			return (s);
@@ -448,8 +457,11 @@ function publishBlog (jstruct, options, callback) {
 				}
 			return (atts);
 			}
-		function addItemSubs (parent, ulLevel) {
-			var ulAddedClass = "";
+		function getItemSubs (parent, ulLevel) {
+			var htmltext = "", indentlevel = 0, ulAddedClass = "";
+			function add (s) {
+				htmltext += utils.filledString ("\t", indentlevel) + s + "\n";
+				}
 			if (utils.getBoolean (parent.flNumberedSubs)) { //6/15/17 by DW
 				ulAddedClass = " ulNumberedSubs";
 				}
@@ -458,10 +470,25 @@ function publishBlog (jstruct, options, callback) {
 				var item = parent.subs [i];
 				add ("<li" + getDataAtts (item) + ">" + getRenderedText (item) + "</li>");
 				if (item.subs !== undefined) {
-					addItemSubs (item, ulLevel + 1);
+					add (getItemSubs (item, ulLevel + 1));
 					}
 				}
 			add ("</ul>"); indentlevel--;
+			return (htmltext);
+			}
+		function buildStoryPage (item, itemsubtext, callback) { //12/28/17 by DW
+			var daypath = utils.getDatePath (new Date (item.created), true);
+			var relpath = daypath + utils.stringDelete (getPermalinkString (item.created), 1, 1) + ".html";
+			var pagetitle = blogConfig.title + ": " + item.text;
+			
+			var titleline = "<div class=\"divTitle\">" + getRenderedText (item, true) + "</div>";
+			var htmltext = "<div class=\"divTitledItem\">" + titleline + itemsubtext + "</div>";
+			
+			publishThroughTemplate (relpath, pagetitle, htmltext, undefined, undefined, function () {
+				if (callback !== undefined) {
+					callback ();
+					}
+				});
 			}
 		
 		addDayToCalendar (blogConfig, day.created, urlpage); //5/13/17 by DW
@@ -477,8 +504,11 @@ function publishBlog (jstruct, options, callback) {
 			else {
 				add ("<div class=\"divTitledItem\">"); indentlevel++;
 				add ("<div class=\"divTitle\">" + getRenderedText (item, true) + "</div>");
-				addItemSubs (item, 0);
+				var itemsubtext = getItemSubs (item, 0);
+				add (itemsubtext);
 				add ("</div>"); indentlevel--;
+				
+				buildStoryPage (item, itemsubtext); //12/28/17 by DW
 				}
 			}
 		
