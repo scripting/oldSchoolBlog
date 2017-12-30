@@ -1,13 +1,10 @@
-var myVersion = "0.5.2", myProductName = "oldSchool";  
+var myVersion = "0.5.4", myProductName = "oldSchool";  
 
 exports.init = init;
 exports.publishBlog = publishBlog;
 
 const rss = require ("daverss");
-
 const s3 = require ("daves3");
-
-
 const utils = require ("daveutils");
 const request = require ("request");
 const dateFormat = require ("dateformat");
@@ -45,12 +42,9 @@ var config = { //defaults
 		}
 	};
 
-
-
 function publishFile (path, data, type, acl, callback, metadata) { //8/14/17 by DW
 	s3.newObject (path, data, type, acl, callback, metadata);
 	}
-
 function debugMessage (theMessage) { //8/8/17 by DW
 	console.log (theMessage);
 	if (config.debugMessageCallback !== undefined) {
@@ -391,8 +385,6 @@ function publishBlog (jstruct, options, callback) {
 				}
 			});
 		}
-	
-	
 	function publishDay (day, blogConfig, callback) {
 		var htmltext = "", indentlevel = 0, daypath = utils.getDatePath (new Date (day.created), false), relpath = daypath + ".html", path = blogConfig.basePath + relpath;
 		var urlpage = blogConfig.baseUrl + relpath;
@@ -402,7 +394,7 @@ function publishBlog (jstruct, options, callback) {
 		function add (s) {
 			htmltext += utils.filledString ("\t", indentlevel) + s + "\n";
 			}
-		function getRenderedText (item, flTextIsTitle) {
+		function getRenderedText (item, flTextIsTitle, urlStoryPage) {
 			var s = emojiProcess (glossaryProcess (item.text));
 			
 			switch (item.type) {
@@ -420,15 +412,18 @@ function publishBlog (jstruct, options, callback) {
 			
 			var ourLink = getPermalinkString (item.created); //7/9/17 by DW
 			
-			if (item.subs !== undefined) { //12/29/17 by DW
-				ourLink = utils.stringDelete (ourLink, 1, 1) + ".html";
-				item.permalink = blogConfig.baseUrl + utils.getDatePath (new Date (day.created), true) + ourLink;
+			if (urlStoryPage !== undefined) { //12/30/17 by DW
+				item.permalink = urlStoryPage + "#" + ourLink;
 				}
 			else {
-				item.permalink = urlpage + "#" + ourLink;
+				if (item.subs !== undefined) { //12/29/17 by DW
+					ourLink = utils.stringDelete (ourLink, 1, 1) + ".html";
+					item.permalink = blogConfig.baseUrl + utils.getDatePath (new Date (day.created), true) + ourLink;
+					}
+				else {
+					item.permalink = urlpage + "#" + ourLink;
+					}
 				}
-			
-			var title = "Direct link to this item.";
 			
 			var imgHtml = "";
 			if (item.image !== undefined) {
@@ -439,9 +434,8 @@ function publishBlog (jstruct, options, callback) {
 				s = "<a href=\"" + item.permalink + "\"><span class=\"spTitleLink\">" + s + "</a></a>";
 				}
 			
+			var title = "Direct link to this item.";
 			s = "<a name=\"" + item.permalink + "\"></a>" + imgHtml + s + "<span class=\"spPermaLink\"><a href=\"" + item.permalink + "\" title=\"" + title + "\">#</a></span>";
-			
-			
 			return (s);
 			}
 		function getDataAtts (item) { //7/12/17 by DW
@@ -457,7 +451,7 @@ function publishBlog (jstruct, options, callback) {
 				}
 			return (atts);
 			}
-		function getItemSubs (parent, ulLevel) {
+		function getItemSubs (parent, ulLevel, urlStoryPage) {
 			var htmltext = "", indentlevel = 0, ulAddedClass = "";
 			function add (s) {
 				htmltext += utils.filledString ("\t", indentlevel) + s + "\n";
@@ -468,9 +462,9 @@ function publishBlog (jstruct, options, callback) {
 			add ("<ul class=\"ulLevel" + ulLevel + ulAddedClass + "\">"); indentlevel++;
 			for (var i = 0; i < parent.subs.length; i++) {
 				var item = parent.subs [i];
-				add ("<li" + getDataAtts (item) + ">" + getRenderedText (item) + "</li>");
+				add ("<li" + getDataAtts (item) + ">" + getRenderedText (item, undefined, urlStoryPage) + "</li>");
 				if (item.subs !== undefined) {
-					add (getItemSubs (item, ulLevel + 1));
+					add (getItemSubs (item, ulLevel + 1, urlStoryPage));
 					}
 				}
 			add ("</ul>"); indentlevel--;
@@ -504,7 +498,7 @@ function publishBlog (jstruct, options, callback) {
 			else {
 				add ("<div class=\"divTitledItem\">"); indentlevel++;
 				add ("<div class=\"divTitle\">" + getRenderedText (item, true) + "</div>");
-				var itemsubtext = getItemSubs (item, 0);
+				var itemsubtext = getItemSubs (item, 0, item.permalink);
 				add (itemsubtext);
 				add ("</div>"); indentlevel--;
 				
