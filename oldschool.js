@@ -1,4 +1,4 @@
-var myVersion = "0.5.6", myProductName = "oldSchool";  
+var myVersion = "0.5.9", myProductName = "oldSchool";  
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -474,7 +474,7 @@ function publishBlog (jstruct, options, callback) {
 			var relpath = daypath + utils.stringDelete (getPermalinkString (item.created), 1, 1) + ".html";
 			var pagetitle = blogConfig.title + ": " + item.text;
 			
-			var titleline = "<div class=\"divTitle\">" + getRenderedText (item, true) + "</div>";
+			var titleline = "<div class=\"divStoryPageTitle\">" + getRenderedText (item, true) + "</div>";
 			var htmltext = "<div class=\"divTitledItem\">" + titleline + itemsubtext + "</div>";
 			
 			publishThroughTemplate (relpath, pagetitle, htmltext, undefined, undefined, function () {
