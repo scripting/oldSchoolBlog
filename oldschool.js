@@ -1,4 +1,4 @@
-var myVersion = "0.5.4", myProductName = "oldSchool";  
+var myVersion = "0.5.6", myProductName = "oldSchool";  
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -417,8 +417,7 @@ function publishBlog (jstruct, options, callback) {
 				}
 			else {
 				if (item.subs !== undefined) { //12/29/17 by DW
-					ourLink = utils.stringDelete (ourLink, 1, 1) + ".html";
-					item.permalink = blogConfig.baseUrl + utils.getDatePath (new Date (day.created), true) + ourLink;
+					item.permalink = blogConfig.baseUrl + utils.getDatePath (new Date (day.created), true) + utils.stringDelete (ourLink, 1, 1) + ".html";
 					}
 				else {
 					item.permalink = urlpage + "#" + ourLink;
@@ -435,7 +434,7 @@ function publishBlog (jstruct, options, callback) {
 				}
 			
 			var title = "Direct link to this item.";
-			s = "<a name=\"" + item.permalink + "\"></a>" + imgHtml + s + "<span class=\"spPermaLink\"><a href=\"" + item.permalink + "\" title=\"" + title + "\">#</a></span>";
+			s = "<a name=\"" + ourLink + "\"></a>" + imgHtml + s + "<span class=\"spPermaLink\"><a href=\"" + item.permalink + "\" title=\"" + title + "\">#</a></span>";
 			return (s);
 			}
 		function getDataAtts (item) { //7/12/17 by DW
