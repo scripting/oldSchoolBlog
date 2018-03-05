@@ -1,4 +1,4 @@
-var myVersion = "0.5.9", myProductName = "oldSchool";  
+var myVersion = "0.5.20", myProductName = "oldSchool";  
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -242,7 +242,7 @@ function publishBlog (jstruct, options, callback) {
 	function glossaryProcess (s) {
 		return (utils.multipleReplaceAll (s, blogConfig.glossary));
 		}
-	function publishThroughTemplate (relpath, pagetitle, htmltext, templatetext, addToConfig, callback) {
+	function publishThroughTemplate (relpath, pagetitle, pagedescription, htmltext, templatetext, addToConfig, callback) {
 		function getSocialMediaLinks () {
 			var htmltext = "", indentlevel = 0, head = blogConfig.jstruct.head;
 			function add (s) {
@@ -324,7 +324,7 @@ function publishBlog (jstruct, options, callback) {
 			add ("<meta name=\"twitter:card\" content=\"summary_large_image\">");
 			add ("<meta name=\"twitter:site\" content=\"@" + blogConfig.twitterScreenName + "\">");
 			add ("<meta name=\"twitter:title\" content=\"" + pagetitle + "\">");
-			add ("<meta name=\"twitter:description\" content=\"" + blogConfig.description + "\">");
+			add ("<meta name=\"twitter:description\" content=\"" + pagedescription + "\">");
 			if (blogConfig.flIncludeImageInMetadata) { //6/27/17 by DW
 				add ("<meta name=\"twitter:image:src\" content=\"" + blogConfig.urlHeaderImage + "\">");
 				}
@@ -340,11 +340,15 @@ function publishBlog (jstruct, options, callback) {
 			add ("<meta property=\"og:site_name\" content=\"" + blogConfig.title + "\" />");
 			add ("<meta property=\"og:title\" content=\"" + pagetitle + "\" />");
 			add ("<meta property=\"og:url\" content=\"" + blogConfig.baseUrl + relpath + "\" />");
-			add ("<meta property=\"og:description\" content=\"" + blogConfig.description + "\" />");
+			add ("<meta property=\"og:description\" content=\"" + pagedescription + "\" />");
 			if (blogConfig.flIncludeImageInMetadata) { //6/27/17 by DW
 				add ("<meta property=\"og:image\" content=\"" + blogConfig.urlHeaderImage + "\" />");
 				}
 			return (htmltext);
+			}
+		
+		if (pagedescription === undefined) { //1/6/18 by DW
+			pagedescription = blogConfig.description;
 			}
 		var pagetable = {
 			pagetitle: pagetitle,
@@ -354,7 +358,7 @@ function publishBlog (jstruct, options, callback) {
 			facebookmetadata: getFacebookMetadata (pagetitle, relpath),
 			socialMediaLinks: getSocialMediaLinks (),
 			rssLink: getRssLink (),
-			now: dateFormat (now, "dddd mmmm d, yyyy; h:mm TT Z"),
+			now: dateFormat (now, "dddd mmmm d, yyyy; h:MM TT Z"),
 			configJson: getConfigJson (),
 			opmlHead: getOpmlHeadInJson (),
 			};
@@ -473,11 +477,18 @@ function publishBlog (jstruct, options, callback) {
 			var daypath = utils.getDatePath (new Date (item.created), true);
 			var relpath = daypath + utils.stringDelete (getPermalinkString (item.created), 1, 1) + ".html";
 			var pagetitle = blogConfig.title + ": " + item.text;
+			var pagedescription = item.description;
+			
+			function formatTimeLine (when) { //2/11/18 by DW
+				return (dateFormat (when, "dddd mmmm d, yyyy; h:MM TT Z"));
+				}
 			
 			var titleline = "<div class=\"divStoryPageTitle\">" + getRenderedText (item, true) + "</div>";
-			var htmltext = "<div class=\"divTitledItem\">" + titleline + itemsubtext + "</div>";
+			var posttimeline = "<div class=\"divStoryPagePostTime\">" + formatTimeLine (item.created) + "</div>";
+			var htmltext = "<div class=\"divTitledItem\">" + posttimeline + titleline + itemsubtext + "</div>";
 			
-			publishThroughTemplate (relpath, pagetitle, htmltext, undefined, undefined, function () {
+			
+			publishThroughTemplate (relpath, pagetitle, pagedescription, htmltext, undefined, undefined, function () {
 				if (callback !== undefined) {
 					callback ();
 					}
@@ -511,7 +522,7 @@ function publishBlog (jstruct, options, callback) {
 			htmltext: htmltext
 			}
 		
-		publishThroughTemplate (relpath, pagetitle, htmltext, undefined, undefined, function () {
+		publishThroughTemplate (relpath, pagetitle, undefined, htmltext, undefined, undefined, function () {
 			if (callback !== undefined) {
 				callback ();
 				}
@@ -544,7 +555,7 @@ function publishBlog (jstruct, options, callback) {
 		var addToConfig = {
 			flHomePage: true //so JS code can tell that it should add the tabs
 			};
-		publishThroughTemplate (config.indexHtmlFname, pagetitle, htmltext, blogConfig.homePageTemplatetext, addToConfig, function () {
+		publishThroughTemplate (config.indexHtmlFname, pagetitle, undefined, htmltext, blogConfig.homePageTemplatetext, addToConfig, function () {
 			var path = blogConfig.basePath + config.homeHtmlFname;
 			publishFile (path, htmltext, "text/html", "public-read", function (err, data) {
 				if (err) {
@@ -588,7 +599,7 @@ function publishBlog (jstruct, options, callback) {
 				}
 			return (htmltext);
 			}
-		publishThroughTemplate (relpath, pagetitle, getMonthlyHtml (), undefined, undefined, function () {
+		publishThroughTemplate (relpath, pagetitle, undefined, getMonthlyHtml (), undefined, undefined, function () {
 			if (callback !== undefined) {
 				callback ();
 				}
@@ -816,7 +827,7 @@ function publishBlog (jstruct, options, callback) {
 		}
 	function publishCustomPages (callback) {
 		function pubOnePage (path, pagetitle, htmltext, callback) {
-			publishThroughTemplate (path, pagetitle, htmltext, undefined, undefined, function () {
+			publishThroughTemplate (path, pagetitle, undefined, htmltext, undefined, undefined, function () {
 				if (callback !== undefined) {
 					callback ();
 					}
