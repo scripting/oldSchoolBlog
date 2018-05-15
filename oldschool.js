@@ -1,4 +1,4 @@
-var myVersion = "0.5.20", myProductName = "oldSchool";  
+var myVersion = "0.5.21", myProductName = "oldSchool";  
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -455,14 +455,17 @@ function publishBlog (jstruct, options, callback) {
 			return (atts);
 			}
 		function getItemSubs (parent, ulLevel, urlStoryPage) {
-			var htmltext = "", indentlevel = 0, ulAddedClass = "";
+			var htmltext = "", indentlevel = 0, ulAddedClass = "", ulCollapsedClass = "";
 			function add (s) {
 				htmltext += utils.filledString ("\t", indentlevel) + s + "\n";
 				}
 			if (utils.getBoolean (parent.flNumberedSubs)) { //6/15/17 by DW
 				ulAddedClass = " ulNumberedSubs";
 				}
-			add ("<ul class=\"ulLevel" + ulLevel + ulAddedClass + "\">"); indentlevel++;
+			if (utils.getBoolean (parent.collapse)) { //5/15/18 by DW
+				ulCollapsedClass = " ulCollapsed";
+				}
+			add ("<ul class=\"ulLevel" + ulLevel + ulAddedClass + ulCollapsedClass + "\">"); indentlevel++;
 			for (var i = 0; i < parent.subs.length; i++) {
 				var item = parent.subs [i];
 				add ("<li" + getDataAtts (item) + ">" + getRenderedText (item, undefined, urlStoryPage) + "</li>");
