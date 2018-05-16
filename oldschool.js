@@ -1,4 +1,4 @@
-var myVersion = "0.5.21", myProductName = "oldSchool";  
+var myVersion = "0.5.23", myProductName = "oldSchool";  
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -461,6 +461,11 @@ function publishBlog (jstruct, options, callback) {
 				}
 			if (utils.getBoolean (parent.flNumberedSubs)) { //6/15/17 by DW
 				ulAddedClass = " ulNumberedSubs";
+				}
+			else {
+				if (utils.getBoolean (parent.flBulletedSubs)) { //5/15/18 by DW
+					ulAddedClass = " ulBulletedSubs";
+					}
 				}
 			if (utils.getBoolean (parent.collapse)) { //5/15/18 by DW
 				ulCollapsedClass = " ulCollapsed";

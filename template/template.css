@@ -1,0 +1,541 @@
+@import url('https://fonts.googleapis.com/css?family=Oswald:400,700');
+
+body { 
+	font-family: "Ubuntu";
+	font-size: 18px;
+	}
+.divPagetop {
+	width: 100%;
+	}
+.divPagetopImage {
+	position: absolute;
+	top: 0;
+	left: 0;
+	height: 230px;
+	width: 100%;
+	margin-left: 0;
+	margin-top: 0;
+	z-index: -1;
+	-webkit-background-size: cover;
+	-moz-background-size: cover;
+	-o-background-size: cover;
+	background-size: cover;
+	background-position: center;
+	background-repeat: no-repeat;
+	background-color: black;
+	z-index: 0;
+	}
+.divPagetopTextBackground {
+	position: absolute;
+	top: 30;
+	left: 15%;
+	width: 70%;
+	height: 140px;
+	z-index: 1;
+	background-color: black;
+	opacity: 0.25;
+	border-top: 1px solid white;
+	display: none;
+	}
+.divPagetopText {
+	position: absolute;
+	text-align: center;
+	top: 60;
+	left: 15%;
+	width: 65%;
+	height: 200px;
+	color: white;
+	padding-top: 3px;
+	padding-left: 20px;
+	z-index: 2;
+	}
+.divPagetopTitle {
+	font-family: "Oswald";
+	font-size: 80px;
+	font-weight: 700;
+	font-style: normal;
+	letter-spacing: -0.01em;
+	line-height: 1.1;
+	margin-bottom: 0;
+	color: white;
+	text-shadow: 1px 1px black;
+	}
+.divPagetopTitle a {
+	color: white;
+	cursor: pointer;
+	}
+.divPagetopTitle a:hover {
+	text-decoration: none;
+	color: lemonchiffon;
+	}
+.divPagetopDescription {
+	font-size: 20px;
+	margin-top: 5px;
+	text-shadow: 1px 1px black;
+	}
+.divPageBody {
+	width: 680px;
+	margin-top: 280px;
+	margin-left: auto;
+	margin-right: auto;
+	margin-bottom: 400px;
+	}
+.divDayTitle {
+	font-family: "Oswald";
+	font-size: 32px;
+	font-weight: bold;
+	margin-bottom: 30px;
+	letter-spacing: -1px;
+	}
+.divDayTitle a {
+	color: black;
+	opacity: .85;
+	cursor: pointer;
+	}
+.divSingularItem {
+	line-height: 150%;
+	margin-bottom: .6em;
+	}
+.divTitledItem {
+	}
+.divTitledItem .divTitle {
+	font-family: "Oswald";
+	font-size: 25px;
+	margin-top: 20px;
+	margin-bottom: .1em;
+	font-weight: bold;
+	line-height: 140%;
+	letter-spacing: -1px;
+	}
+.divTitledItem .ulLevel0 {
+	margin-left: 0;
+	}
+.divTitledItem li {
+	list-style-type: none;
+	margin-bottom: .6em;
+	line-height: 150%;
+	}
+.spLink {
+	margin-left: .5em;
+	}
+.spLink a {
+	color: gray;
+	cursor: pointer;
+	}
+.spPermaLink {
+	margin-left: .4em;
+	}
+.spPermaLink a {
+	font-family: "Ubuntu";
+	color: purple;
+	opacity: 0.2;
+	font-weight: normal;
+	font-size: 14px;
+	cursor: pointer;
+	}
+.divArchivePageDay {
+	margin-bottom: 40px;
+	}
+.divFooter {
+	margin-top: 400px;
+	font-size: .80em;
+	line-height: 180%;
+	border-top: 1px solid silver;
+	text-align: center;
+	padding-top: 15px;
+	}
+.divSocialMediaLinks {
+	letter-spacing: 12px; 
+	margin-top: 5px;
+	}
+.spTitleLink {
+	color: black;
+	opacity: .85;
+	cursor: pointer;
+	}
+.ulNumberedSubs li {
+	list-style-type: decimal;
+	}
+
+/* 5/27/17 by DW -- snap.js */
+	.divSnapIcon {
+		position: fixed;
+		top: 0;
+		left: 0;
+		z-index: 20;
+		}
+	.divVersionNumber {
+		
+		position: absolute; 
+		top: 5;
+		left: 95%;
+		
+		font-size: 12px;
+		z-index: 20;
+		
+		color: black;
+		background-color: white;
+		padding: 2px;
+		padding-left: 4px;
+		padding-right: 4px;
+		line-height: 1em;
+		border: 1px solid gray;
+		opacity: .7;
+		}
+	.divSnapIcon a {
+		display: block;
+		width: 44px;
+		height: 44px;
+		cursor: pointer;
+		float: left;
+		}
+	.divSnapIcon i {
+		font-size: 22px;
+		margin-left: 11px;
+		margin-top: 10px;
+		}
+	.snap-content {
+		background-color: white;
+		}
+	.snap-drawers {
+		background: gainsboro;
+		width: 300px;
+		}
+	.snap-drawer {
+		background: gainsboro;
+		color: #eee;
+		width: 300px;
+		}
+	.divLeftDrawerContent {
+		width: 80%;
+		margin-left: 10%;
+		color: black;
+		}
+	.divLeftDrawer h4 {
+		color: black;
+		font-size: 18px;
+		font-weight: bold;
+		}
+	.divLeftDrawer p {
+		margin-bottom: 20px;
+		font-size: 18px;
+		}
+	.divLeftDrawer .divOutlineText {
+		font-size: 14px;
+		margin-bottom: 5px;
+		}
+	.divLeftDrawer .divOutlineText a {
+		color: black;
+		}
+	.divOutlineDisplayer {
+		margin-top: 60px;
+		}
+	.divLeftDrawer .divRenderedOutline .divOutlineHead .aOutlineTextLink {
+		color: black;
+		}
+	
+	.aSnapClosed {
+		background-color: black;
+		}
+	.aSnapClosed i {
+		color: white;
+		}
+	.aSnapOpen {
+		background-color: inherit;
+		}
+	.aSnapOpen i {
+		color: black;
+		}
+/* 5/27/17 by DW -- about outline */
+	.divAboutOutline {
+		}
+	.divAboutOutline ul {
+		margin-left: 15px;
+		}
+	.divAboutOutline .divOutlineText {
+		font-size: 17px;
+		line-height: 160%;
+		}
+	.divAboutOutline .divOutlineHead .aOutlineTextLink {
+		color: black;
+		}
+/* 7/13/17 by DW -- xrefs */
+	.spScriptingNewsWedge {
+		font-size: 1.1em;
+		float: left;
+		margin-left: -.7em;
+		margin-top: .3em;
+		cursor: pointer;
+		}
+	.spScriptingNewsWedge i {
+		color: black;
+		opacity: .3;
+		}
+	.divXrefOutline {
+		font-size: 16px;
+		margin-top: 10px;
+		padding-left: 25px;
+		padding-right: 25px;
+		padding-top: 15px;
+		padding-bottom: 10px;
+		margin-bottom: 10px;
+		background-color: white;
+		border: 1px solid silver;
+		display: none;
+		}
+	.divXrefOutline .divRenderedOutline .divOutlineHead .aOutlineTextLink {
+		color: black;
+		}
+	.divXrefPermalink {
+		float: right;
+		font-size: 14px;
+		margin-top: -2px;
+		}
+	.darkCaretColor {
+		color: green;
+		}
+	.lightCaretColor {
+		color: green;
+		opacity: .3;
+		}
+/* 7/24/17 by DW -- tweets */
+	.divEmbeddedTweet {
+		visibility: hidden;
+		}
+	.imgExpandable {
+		display: block;
+		visibility: hidden;
+		}
+/* 7/25/17 by DW -- make emoji a little bigger */
+	.spOldSchoolEmoji {
+		font-size: 1.1em;
+		}
+	.divDisqusThread {
+		border: 1px solid silver;
+		background-color: white;
+		min-height: 200px
+		}
+/* 8/2/17 by DW */
+	.divXrefOutline {
+		line-height: 140%;
+		}
+/* 9/11/17 by DW -- tabs*/
+	.divPageBody {
+		margin-top: 260px;
+		}
+	.divScriptingTab {
+		min-height: 600px;
+		background-color: white;
+		border: 1px solid rgb(221, 221, 221);
+		}
+	.iTabIcon {
+		margin-right: .4em;
+		opacity: .8;
+		}
+	.divScriptingTabs li {
+		width: 120px;
+		color: gray;
+		}
+	.active {
+		color: black;
+		font-weight: bold;
+		}
+	.nav-tabs {
+		margin-bottom: -1px;
+		font-size: 18px;
+		}
+	.nav-tabs > li > a {
+		cursor: pointer;
+		color: inherit;
+		}
+	.nav-tabs > .active > a, .nav-tabs > .active > a:hover, .nav-tabs > .active > a:focus {
+		background-color: white;
+		border: 1px solid silver;
+		border-bottom-color: transparent;
+		}
+	.nav-tabs > li > a, .nav-pills > li > a {
+		padding-left: 8px;
+		padding-right: 8px;
+		}
+	.divTabContent {
+		margin-top: 30px;
+		margin-left: 40px;
+		margin-right: 40px;
+		}
+	.divAboutOutline, .divAboutOutline .divOutlineText {
+		font-size: 18px;
+		line-height: 130%;
+		}
+	.divOutlineHead {
+		font-family: "Oswald";
+		font-size: 32px;
+		letter-spacing: -1px;
+		line-height: 100%;
+		vertical-align: text-top;
+		margin-top: -4px;
+		margin-left: -5px;
+		margin-bottom: .4em;
+		}
+	.snap-content {
+		background-color: whitesmoke;
+		}
+	.divLeftDrawerContent .divOutlineHead {
+		font-family: "Ubuntu";
+		font-size: 20px;
+		}
+/* 9/28/17 by DW*/
+	.divLastScriptingUpdate {
+		float: right;
+		font-size: 14px;
+		color: rgb(128, 128, 128);
+		padding-top: 12px;
+		padding-right: 2px;
+		}
+/* 12/19/17 by DW -- discuss tab */
+	.divDiscussIntro {
+		font-size: 14px;
+		line-height: 140%;
+		}
+	.divComments {
+		border: 1px solid silver;
+		padding: 8px;
+		background-color: whitesmoke;
+		margin-top: 30px;
+		margin-bottom: 50px;
+		}
+/* 12/31/17 by DW -- story pages */
+	.divStoryPageTitle {
+		font-family: "Oswald";
+		font-size: 32px;
+		font-weight: bold;
+		line-height: 100%;
+		margin-bottom: 20px;
+		letter-spacing: -1px;
+		}
+	.divStoryPageTitle a {
+		color: black;
+		opacity: .85;
+		cursor: pointer;
+		}
+	.divStoryPageTitle .spPermalink {
+		display: none;
+		}
+/* 2/6/18 by DW */
+	.divStoryPageTitle {
+		font-size: 48px;
+		letter-spacing: -3px;
+		}
+/* 2/11/18 by DW */
+	.divStoryPagePostTime {
+		font-size: 18px;
+		margin-bottom: 15px;
+		}
+/* 5/15/18 by DW -- collapse attribute, flBulletedList attribute */
+	.ulCollapsed {
+		display: none;
+		}
+	.ulBulletedSubs li {
+		list-style-type: square;
+		}
+
+/* styles for phone */
+	@media only screen 
+	and (min-device-width : 320px) 
+	and (max-device-width : 480px) {
+		body {
+			font-size: 16px;
+			}
+		.divPageBody {
+			width: 90%;
+			margin-left: auto;
+			margin-right: auto;
+			margin-top: 150px;
+			}
+		.divPagetopImage {
+			height: 135px;
+			}
+		.divPagetopText {
+			top: 20;
+			width: 100%;
+			left: 0;
+			padding-left: 0;
+			height: 100px;
+			}
+		.divPagetopTitle {
+			font-size: 45px;
+			}
+		.divPagetopDescription {
+			font-size: 16px;
+			margin-top: 3px;
+			}
+		.divDayTitle {
+			font-size: 22px;
+			margin-bottom: 15px;
+			}
+		.divStoryPageTitle {
+			font-size: 28px;
+			letter-spacing: -1px;
+			}
+		.divStoryPagePostTime {
+			font-size: 15px;
+			}
+		.divOutlineHead {
+			font-size: 18px;
+			margin-bottom: 15px;
+			}
+		.divAboutOutline .divOutlineText {
+			font-size: 16px;
+			margin-bottom: 7px;
+			}
+		.divAboutOutline ul {
+			margin-left: 5px;
+			}
+		.divTitledItem .divTitle {
+			font-size: 22px;
+			margin-top: 15px;
+			}
+		.nav-tabs {
+			font-size: 16px;
+			}
+		.nav-tabs > li > a, .nav-pills > li > a {
+			padding-left: 2px;
+			padding-right: 6px;
+			}
+		.divScriptingTabs li {
+			width: 92px;
+			}
+		.divTabContent {
+			margin-top: 20px;
+			margin-left: 30px;
+			margin-right: 30px;
+			}
+		.divLastScriptingUpdate {
+			display: none;
+			}
+		
+		 #discuss {
+			display: none;
+			}
+		
+		}
+/* styles for tablet */
+	@media only screen and (min-device-width: 768px) and (max-device-width: 1024px) {
+		.divPagetopText {
+			top: 30;
+			width: 100%;
+			left: 0;
+			padding-left: 0;
+			}
+		.divPagetopImage {
+			height: 185px;
+			}
+		.divPageBody {
+			width: 75%;
+			margin-left: auto;
+			margin-right: auto;
+			margin-top: 230px;
+			}
+		.divLastScriptingUpdate {
+			display: none;
+			}
+		}

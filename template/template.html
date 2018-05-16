@@ -1,0 +1,80 @@
+<html>
+	<head>
+		<title>[%pagetitle%]</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		[%rssLink%]
+		[%facebookmetadata%]
+		[%twittermetadata%]
+		
+		<script src="http://fargo.io/code/jquery-1.9.1.min.js"></script>
+<link href="http://fargo.io/code/bootstrap.css" rel="stylesheet">
+<script src="http://fargo.io/code/bootstrap.min.js"></script>
+
+<link rel="stylesheet" href="http://fargo.io/code/fontAwesome/css/font-awesome.min.css"/>
+<link href="https://fonts.googleapis.com/css?family=Ubuntu" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Rancho" rel="stylesheet">
+
+<script src="http://fargo.io/code/node/shared/utils.js"></script>
+<script src="http://fargo.io/code/node/shared/alertdialog.js"></script>
+<script src="http://fargo.io/code/node/shared/confirmdialog.js"></script>
+<script src="http://fargo.io/code/node/shared/askdialog.js"></script>
+<script src="http://fargo.io/code/strftime.js"></script>
+<script src="http://fargo.io/code/shared/ga.js"></script>
+<script src="http://fargo.io/code/shared/app.js"></script>
+
+<script src="http://fargo.io/code/shared/menus.js"></script>
+<link href="http://fargo.io/code/shared/menus.css" rel="stylesheet" type="text/css">
+
+<link href="http://fargo.io/code/shared/app.css" rel="stylesheet" type="text/css">
+<script src="http://fargo.io/code/shared/appprefs.js?x=2"></script>
+
+<script src="http://fargo.io/code/shared/jBeep.min.js"></script>
+<script src="http://fargo.io/code/shared/beep.js"></script>
+
+		<script src="http://api.nodestorage.io/api.js"></script>
+<script src="http://fargo.io/code/shared/emojify.js"></script>
+<link rel="stylesheet" href="http://fargo.io/code/shared/emojify.css"/>
+<script src="http://fargo.io/code/markdownConverter.js"></script>
+<script src="http://fargo.io/code/browsers/outlinebrowser.js" async></script>
+<link href="http://fargo.io/code/browsers/riverbrowser.css" rel="stylesheet" type="text/css">
+<script src="http://fargo.io/code/browsers/riverbrowser.js"></script>
+
+		
+		<link href="http://radio3.io/code/pagestyles.css" rel="stylesheet" type="text/css">
+		<script src="http://radio3.io/code/pagecode.js"></script>
+		
+		<script src="http://fargo.io/code/shared/xml.js"></script>
+		<script src="http://fargo.io/code/shared/reader.js"></script>
+		<script src="http://fargo.io/cms/snap/snap.js"></script>
+		<link rel="stylesheet" type="text/css" href="http://fargo.io/cms/snap/snap.css" />
+		<link rel="stylesheet" type="text/css" href="http://fargo.io/code/shared/reader.css" />
+		
+		<link href="http://fargo.io/code/shared/oldschool/daytemplate.css?x=9" rel="stylesheet" type="text/css">
+		<script src="http://fargo.io/code/shared/oldschool/daytemplate.js?x=9"></script>
+		<script>
+			var config = [%configJson%];
+			var opmlHead = [%opmlHead%];
+			</script>
+		</head>
+	<body>
+		<div class="divVersionNumber" id="idVersionNumber">
+			</div>
+		<div class="divPagetop">
+			[%pagetop%]
+			</div>
+		<div class="divPageBody">
+			[%bodytext%]
+			<div class="divFooter">
+				<p>[%copyright%]</p>
+				<p>Last update: [%now%].</p>
+				[%socialMediaLinks%]
+				</div>
+			</div>
+		<script>
+			$(document).ready (function () {
+				startup ();
+				});
+			</script>
+		</body>
+	</html>
