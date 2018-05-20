@@ -50,8 +50,14 @@
 		<link rel="stylesheet" type="text/css" href="http://fargo.io/cms/snap/snap.css" />
 		<link rel="stylesheet" type="text/css" href="http://fargo.io/code/shared/reader.css" />
 		
-		<link href="http://fargo.io/code/shared/oldschool/daytemplate.css?x=9" rel="stylesheet" type="text/css">
-		<script src="http://fargo.io/code/shared/oldschool/daytemplate.js?x=9"></script>
+		<link href="http://fargo.io/code/shared/oldschool/daytemplate.css?x=10" rel="stylesheet" type="text/css">
+		<script src="http://fargo.io/code/shared/oldschool/daytemplate.js?x=10"></script>
+		
+		<script>
+			var config = [%configJson%];
+			var opmlHead = [%opmlHead%];
+			</script>
+		
 		<script>
 			var config = [%configJson%];
 			var opmlHead = [%opmlHead%];
@@ -64,16 +70,26 @@
 			[%pagetop%]
 			</div>
 		<div class="divPageBody">
-			<div class="divTextSizeControl">
-				<button id="idTextSizeMinus" class="btn" type="button" onclick="decreaseTextSize ();">-</button>
-				<button id="idTextSizePlus" class="btn" type="button" onclick="increaseTextSize ();">+</button>
+			<div class="divScriptingTabsPage" id="idScriptingTabsPage">
+				<div class="divScriptingTabs" id="idTabs" style="visibility: visible;">
+					<div class="divLastScriptingUpdate" id="idLastScriptingUpdate">
+						</div>
+					<ul id="idTabList" class="nav nav-tabs">
+						</ul>
+					</div>
+				<div class="divScriptingTab" id="idScriptingTab">
+					<div class="divTabContent" id="idTabContent">
+						</div>
+					</div>
 				</div>
-			[%bodytext%]
 			<div class="divFooter">
 				<p>[%copyright%]</p>
 				<p>Last update: [%now%].</p>
 				[%socialMediaLinks%]
 				</div>
+			</div>
+		<div class="divForSearchIndex" style="display: none;" id="idBodytext">
+			[%bodytext%]
 			</div>
 		<script>
 			$(document).ready (function () {

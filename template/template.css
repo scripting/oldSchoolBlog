@@ -437,6 +437,11 @@ body {
 	.ulBulletedSubs li {
 		list-style-type: square;
 		}
+/*  5/19/18 by DW */
+	.divTextSizeControl {
+		float: right;
+		padding: 5px;
+		}
 
 /* styles for phone */
 	@media only screen 

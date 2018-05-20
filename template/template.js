@@ -192,6 +192,44 @@ const urlLinkblogPage = "http://scripting.com/?tab=links"; //9/13/17 by DW
 			}
 		}
 
+
+function setTextSize (amount) {
+	
+	function getFontSize (x) {
+		var att = $(x).css ("font-size");
+		att = stringMid (att, 1, att.length - 2); //pop off px
+		var size = Number (att);
+		console.log ("getFontSize: size == " + size);
+		return (size);
+		}
+	function bumpFontSize (x) {
+		var newsize = getFontSize (x) + amount;
+		if (newsize > 0) {
+			$(x).css ("font-size", newsize);
+			}
+		}
+	
+	$(".divSingularItem").each (function () {
+		bumpFontSize (this);
+		});
+	$(".spTitleLink").each (function () {
+		bumpFontSize (this);
+		});
+	$(".divTitledItem li").each (function () {
+		bumpFontSize (this);
+		});
+	$(".divDayTitle a").each (function () {
+		bumpFontSize (this);
+		});
+	}
+function increaseTextSize () { //5/19/18 by DW
+	$("#idTextSizePlus").blur (); 
+	setTextSize (1);
+	}
+function decreaseTextSize () { //5/19/18 by DW
+	$("#idTextSizeMinus").blur (); 
+	setTextSize (-1);
+	}
 function initWedge (domObject, clickCallback) { //the caret goes to the left of the object -- 7/24/17 by DW
 	var theIcon = $("<i class=\"" + rightCaret + "\"></i>");
 	var theWedge = $("<span class=\"spScriptingNewsWedge\"></span>");

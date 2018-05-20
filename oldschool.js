@@ -1,4 +1,4 @@
-var myVersion = "0.5.23", myProductName = "oldSchool";  
+var myVersion = "0.5.24", myProductName = "oldSchool";  
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -445,7 +445,7 @@ function publishBlog (jstruct, options, callback) {
 			var atts = "";
 			for (var x in item) {
 				switch (x) {
-					case "text": case "created": case "permalink":
+					case "text": case "created": case "permalink": case "subs": //5/16/18 by DW -- added subs
 						break;
 					default:
 						atts += " data-" + x + "=\"" + item [x] + "\"";
@@ -632,9 +632,16 @@ function publishBlog (jstruct, options, callback) {
 						}
 					
 					if (item.subs !== undefined) {
-						add ("<ul>"); indentlevel++;
-						visit (item);
-						add ("</ul>"); indentlevel--;
+						if (utils.getBoolean (item.flNumberedSubs)) { //5/16/18 by DW
+							add ("<ol>"); indentlevel++;
+							visit (item);
+							add ("</ol>"); indentlevel--;
+							}
+						else {
+							add ("<ul>"); indentlevel++;
+							visit (item);
+							add ("</ul>"); indentlevel--;
+							}
 						}
 					}
 				}
