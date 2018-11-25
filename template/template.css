@@ -442,6 +442,33 @@ body {
 		float: right;
 		padding: 5px;
 		}
+/*  7/13/18 by DW -- tweak display of xrefs */
+	.divXrefOutline .divRenderedOutline .divOutlineHead {
+		font-size: 18px;
+		}
+	.divXrefOutline .divRenderedOutline .divOutlineHead .aOutlineTextLink {
+		margin-left: 7px;
+		}
+/*  11/8/18 by DW -- likes */
+	.spLikes {
+		font-size: 18px;
+		cursor: pointer;
+		color: silver;
+		}
+	.spLikes:hover {
+		color: gray;
+		}
+	.spLikes a {
+		color: inherit;
+		}
+	.spThumb a {
+		color: lightslategray;
+		}
+/*  11/23/18 by DW -- likes */
+	.spPermaLink {
+		margin-left: 5px;
+		margin-right: 8px;
+		}
 
 /* styles for phone */
 	@media only screen 

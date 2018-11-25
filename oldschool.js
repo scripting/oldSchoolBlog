@@ -1,4 +1,4 @@
-var myVersion = "0.5.24", myProductName = "oldSchool";  
+var myVersion = "0.5.25", myProductName = "oldSchool";  
 
 exports.init = init;
 exports.publishBlog = publishBlog;

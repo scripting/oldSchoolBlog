@@ -1,4 +1,4 @@
-var myVersion = "0.6.10";
+var myVersion = "0.6.11";
 var mySnap, flSnapDrawerOpen = false;
 var urlSidebarOpml = "http://scripting.com/misc/menubar.opml";
 var drawerWidth = 300;
@@ -7,6 +7,7 @@ const rightCaret = "fa fa-caret-right darkCaretColor", downCaret = "fa fa-caret-
 var tweetSerialnum = 0;
 var urlTwitterServer = "http://electricserver.scripting.com/";
 const urlLinkblogPage = "http://scripting.com/?tab=links"; //9/13/17 by DW
+var ctLikesInPage = 0; //11/10/18 by DW
 
 
 
@@ -191,7 +192,179 @@ const urlLinkblogPage = "http://scripting.com/?tab=links"; //9/13/17 by DW
 			callback ();
 			}
 		}
-
+	
+//like -- 11/8/18 by DW
+	const urlLikeServer = "http://likes.scripting.com/";
+	
+	function serverCall (verb, params, callback, server, method, data) {
+		const timeoutInMilliseconds = 30000;
+		if (method === undefined) {
+			method = "GET";
+			}
+		if (params === undefined) {
+			params = new Object ();
+			}
+		if (params.accessToken === undefined) { //10/29/18 by DW
+			if (localStorage.twOauthToken !== undefined) {
+				params.accessToken = localStorage.twOauthToken;
+				}
+			}
+		if (server === undefined) { //9/25/18 by DW
+			server = urlLikeServer;
+			}
+		var apiUrl = server + verb;
+		var paramString = buildParamList (params);
+		if (paramString.length > 0) {
+			apiUrl += "?" + paramString;
+			}
+		var ajaxResult = $.ajax ({ 
+			url: apiUrl,
+			type: method,
+			data: data,
+			dataType: "text", 
+			headers: undefined,
+			timeout: timeoutInMilliseconds 
+			}) 
+		.success (function (data, status) { 
+			callback (undefined, data);
+			}) 
+		.error (function (status) { 
+			console.log ("serverCall: url == " + apiUrl + ", error == " + jsonStringify (status));
+			callback ({message: "Error reading the file."});
+			});
+		}
+	function likeClick (idLikes, urlForLike) {
+		twStorageData.urlTwitterServer = urlLikeServer;
+		if (twIsTwitterConnected ()) {
+			var params = {
+				oauth_token: localStorage.twOauthToken,
+				oauth_token_secret: localStorage.twOauthTokenSecret,
+				url: urlForLike
+				};
+			console.log ("likeClick:");
+			$("#" + idLikes).blur ();
+			serverCall ("toggle", params, function (err, jsontext) {
+				if (err) {
+					console.log ("likeClick: err == " + jsonStringify (err));
+					}
+				else {
+					var jstruct = JSON.parse (jsontext);
+					console.log ("likeClick: jstruct == " + jsonStringify (jstruct));
+					viewLikes (idLikes, urlForLike, jstruct.likes);
+					}
+				});
+			}
+		else {
+			confirmDialog ("Sign on to Twitter to enable Like/Unlike?", function () {
+				twConnectToTwitter ();
+				});
+			}
+		}
+	function getLikes (url, callback) {
+		var params = {
+			url: url
+			};
+		serverCall ("likes", params, function (err, jsontext) {
+			if (err) {
+				console.log ("getLikes: err == " + jsonStringify (err));
+				callback (err);
+				}
+			else {
+				var jstruct = JSON.parse (jsontext);
+				callback (undefined, jstruct);
+				}
+			});
+		}
+	function viewLikes (idLikes, myUrl, likes) { 
+		function getThumbIcon (thumbDirection, flopen) {
+			var open = "";
+			if (flopen) {
+				open = "o-";
+				}
+			return ("<span class=\"spThumb\"><i class=\"fa fa-thumbs-" + open + thumbDirection + "\"></i></span>&nbsp;");
+			}
+		var likesObject = $("#" + idLikes);
+		var ct = 0, likenames = "", thumbDirection = "up", flOpenThumb = true, myScreenname = twGetScreenName ();
+		if (likes !== undefined) {
+			likes.forEach (function (name) {
+				ct++;
+				likenames += name + ", ";
+				if (name == myScreenname) {
+					thumbDirection = "down";
+					flOpenThumb = false;
+					}
+				});
+			}
+		var theThumb = getThumbIcon ("up", flOpenThumb);
+		
+		var ctLikes = ct; //11/22/18 by DW
+		
+		if (ct > 0) {
+			likenames = stringMid (likenames, 1, likenames.length - 2); //pop off comma and blank at end
+			ctLikes = "<span rel=\"tooltip\" title=\"" + likenames + "\">" + ctLikes + "</span>";
+			}
+		var htmltext = "<span class=\"spLikes\"><a onclick=\"likeClick ('" + idLikes + "', '" + myUrl + "')\">" + theThumb + "</a>" + ctLikes + "</span>";
+		likesObject.html (htmltext);
+		$("[rel=\"tooltip\"]").tooltip ();
+		}
+	function setupLikes () {
+		$(".divTitledItem, .divSingularItem").each (function () {
+			var theText = maxStringLength ($(this).text (), 25);
+			var flLikeSetup = getBoolean ($(this).data ("likesetup"));
+			var attval = $(this).data ("fllikeable"), flLikeable;
+			if (dayGreaterThanOrEqual (config.now, "November 22, 2018")) {
+				flLikeable = true; //default -- 11/22/18 by DW
+				if (attval !== undefined) {
+					flLikeable = getBoolean (attval);
+					}
+				}
+			else {
+				flLikeable = getBoolean (attval);
+				}
+			if ((flLikeable) && (!flLikeSetup)) {
+				var id = "idLike" + ctLikesInPage++;
+				$(this).attr ("data-likesetup", true);
+				$(this).append ("<span id=\"" + id + "\"></span>");
+				
+				var href = undefined;
+				if (this.className == "divTitledItem") {
+					if (config.flHomePage) {
+						$(this).children (".divTitle").each (function () {
+							$(this).children ("a").each (function () {
+								var myhref = $(this).attr ("href");
+								if (myhref !== undefined) {
+									href = myhref;
+									}
+								});
+							});
+						}
+					else {
+						href = window.location.href;
+						}
+					}
+				else {
+					$(this).children (".spPermaLink").each (function () {
+						$(this).children ("a").each (function () {
+							href = $(this).attr ("href");
+							});
+						});
+					}
+				
+				
+				
+				
+				
+				getLikes (href, function (err, theLikes) {
+					if (err) {
+						console.log ("setupLikes: err.message == " + err.message);
+						}
+					else {
+						viewLikes (id, href, theLikes);
+						}
+					});
+				}
+			});
+		}
 
 function setTextSize (amount) {
 	
@@ -353,7 +526,6 @@ function setupTweets () {
 		
 		if (urlTweet !== undefined) {
 			let idTweet = stringLastField (urlTweet, "/");
-			console.log ("setupTweets: urlTweet == " + urlTweet + ", theText == " + theText);
 			initWedge (parentOfTweet, function (flExpand) {
 				function exposeTweetObject () {
 					$(tweetObject).slideDown (75, undefined, function () {
@@ -368,6 +540,10 @@ function setupTweets () {
 						let htmltext = "<div class=\"divEmbeddedTweet\" id=\"" + tweetObjectId + "\"></div>";
 						tweetObject = $(htmltext);
 						$(parentOfTweet).append (tweetObject);
+						if (twStorageData.urlTwitterServer === undefined) { //11/15/18 by DW
+							console.log ("setupTweets: twStorageData.urlTwitterServer == undefined");
+							twStorageData.urlTwitterServer = urlLikeServer; //whack the bug -- 11/23/18 by DW
+							}
 						twViewTweet (idTweet, tweetObjectId, function () {
 							exposeTweetObject ();
 							});
@@ -409,11 +585,17 @@ function setupXrefs () {
 		var xref = $(this).data ("xref");
 		if (xref !== undefined) {
 			var theListItem = this, outlineObject = undefined;
-			var fname = "a" + stringDelete (stringNthField (xref, "#", 2), 1, 1) + ".json"
-			var folder = replaceAll (stringNthField (xref, "#", 1),  ".html", "");
-			var url = replaceAll (folder, "scripting.com/", "scripting.com/items/") + "/" + fname;
+			var fname, folder, url;
+			if (stringContains (xref, "#")) {
+				fname = "a" + stringDelete (stringNthField (xref, "#", 2), 1, 1) + ".json"
+				folder = replaceAll (stringNthField (xref, "#", 1),  ".html", "");
+				}
+			else { //handle xrefs that point to story pages -- 7/13/18 by DW
+				fname = "a" + stringPopExtension (stringLastField (xref, "/")) + ".json";
+				folder = stringPopLastField (xref, "/");
+				}
+			url = replaceAll (folder, "scripting.com/", "scripting.com/items/") + "/" + fname;
 			
-			console.log ("setupXrefs: theText == " + theText + ", url == " + url);
 			
 			initWedge (theListItem, function (flExpand) {
 				if (flExpand) {
@@ -462,7 +644,6 @@ function setupXrefs () {
 		});
 	}
 function viewInPopup (obj) {
-	console.log ("viewInPopup: " + obj);
 	var htmltext = "", indentlevel = 0;
 	function add (s) {
 		htmltext +=  filledString ("\t", indentlevel) + s + "\n";
@@ -476,7 +657,6 @@ function viewInPopup (obj) {
 	add ("</div>"); indentlevel--;
 	add ("</div>"); indentlevel--;
 	
-	console.log (htmltext);
 	}
 function initSnap (urlOpmlFile, idOutlineObject, outlineTitle, flSnapOpenInitially, callback) { 
 	callback ();
@@ -540,7 +720,9 @@ function everySecond () {
 function startup () {
 	console.log ("startup");
 	$("#idVersionNumber").text (myVersion);
-	twStorageData.urlTwitterServer = urlTwitterServer; //7/24/17 AM by DW -- for displaying embedded tweets
+	twStorageData.urlTwitterServer = urlLikeServer;
+	console.log ("startup: twStorageData.urlTwitterServer == " + twStorageData.urlTwitterServer);
+	twGetOauthParams (); //11/10/18 by DW
 	if (localStorage.savedState !== undefined) {
 		savedState = JSON.parse (localStorage.savedState);
 		}
@@ -592,6 +774,10 @@ function startup () {
 			setupExpandableImages (); //7/24/17 by DW
 			setupExpandableVideo (); //10/9/17 by DW
 			setupExpandableOutline (); //5/15/18 by DW
+			setupLikes (); //11/8/18 by DW
+			if (modalImageViewStartup !== undefined) { //6/25/18 by DW
+				modalImageViewStartup (); 
+				}
 			hitCounter (); 
 			if (config.flGoogleAnalytics) {
 				initGoogleAnalytics (config.appDomain, config.idGoogleAccount); 
@@ -600,5 +786,4 @@ function startup () {
 			self.setInterval (everyMinute, 60000); 
 			});
 		});
-	
 	}
