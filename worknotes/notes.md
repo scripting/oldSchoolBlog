@@ -1,5 +1,6 @@
 * 12/15/18; 9:47:29 AM by DW
    * Adding Twitter comments to Scripting News
+      * Cancel button and close box on dialog
       * Each tweet has a #scriptingnews hashtag and the URL of the post it's in reply to.
       * If you're not logged on, clicking the Twitter icon takes you to the logon page on Twitter, as the Likes feature does. 
       * How many characters to reserve for a URL?
