@@ -469,6 +469,43 @@ body {
 		margin-left: 5px;
 		margin-right: 8px;
 		}
+/*  12/14/18 by DW -- twitter comments */
+	.spTwitterComment {
+		margin-left: 0px;
+		margin-right: 8px;
+		}
+	.spTwitterComment a {
+		color: silver;
+		}
+	.spTwitterComment a:hover {
+		color: gray;
+		}
+	.divTweetDialogContainer {
+		padding-top: 15px;
+		padding-bottom: 15px;
+		padding-left: 25px;
+		padding-right: 25px;
+		font-size: 18px;
+		}
+	.divTweetEditorContainer .divTweetPrompt {
+		color: black;
+		font-weight: normal;
+		font-size: 16px;
+		margin-bottom: 3px;
+		}
+	.divTweetEditor {
+		width: 97%;
+		padding: 7px;
+		}
+	.divTweetEditorPostButton {
+		margin-top: 7px;
+		}
+	.medium-editor-placeholder {
+		position: relative; }
+	.medium-editor-placeholder:after {
+		left: 10;
+		top: 10;
+		}
 
 /* styles for phone */
 	@media only screen 

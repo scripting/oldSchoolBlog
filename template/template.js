@@ -1,4 +1,4 @@
-var myVersion = "0.6.11";
+var myVersion = "0.6.12";
 var mySnap, flSnapDrawerOpen = false;
 var urlSidebarOpml = "http://scripting.com/misc/menubar.opml";
 var drawerWidth = 300;
@@ -196,6 +196,17 @@ var ctLikesInPage = 0; //11/10/18 by DW
 //like -- 11/8/18 by DW
 	const urlLikeServer = "http://likes.scripting.com/";
 	
+	function ifConnected (confirmationPrompt, callback) { //12/15/18 by DW
+		twStorageData.urlTwitterServer = urlLikeServer;
+		if (twIsTwitterConnected ()) {
+			callback ();
+			}
+		else {
+			confirmDialog (confirmationPrompt, function () {
+				twConnectToTwitter ();
+				});
+			}
+		}
 	function serverCall (verb, params, callback, server, method, data) {
 		const timeoutInMilliseconds = 30000;
 		if (method === undefined) {
@@ -234,8 +245,7 @@ var ctLikesInPage = 0; //11/10/18 by DW
 			});
 		}
 	function likeClick (idLikes, urlForLike) {
-		twStorageData.urlTwitterServer = urlLikeServer;
-		if (twIsTwitterConnected ()) {
+		ifConnected ("Sign on to Twitter to enable Like/Unlike?", function () {
 			var params = {
 				oauth_token: localStorage.twOauthToken,
 				oauth_token_secret: localStorage.twOauthTokenSecret,
@@ -253,12 +263,7 @@ var ctLikesInPage = 0; //11/10/18 by DW
 					viewLikes (idLikes, urlForLike, jstruct.likes);
 					}
 				});
-			}
-		else {
-			confirmDialog ("Sign on to Twitter to enable Like/Unlike?", function () {
-				twConnectToTwitter ();
-				});
-			}
+			});
 		}
 	function getLikes (url, callback) {
 		var params = {
@@ -307,6 +312,51 @@ var ctLikesInPage = 0; //11/10/18 by DW
 		likesObject.html (htmltext);
 		$("[rel=\"tooltip\"]").tooltip ();
 		}
+	function getPostPermalink (theItem) { //12/15/18 by DW
+		var href = undefined;
+		if (theItem.className == "divTitledItem") {
+			if (config.flHomePage) {
+				$(theItem).children (".divTitle").each (function () {
+					$(this).children ("a").each (function () {
+						var myhref = $(this).attr ("href");
+						if (myhref !== undefined) {
+							href = myhref;
+							}
+						});
+					});
+				}
+			else {
+				href = window.location.href;
+				}
+			}
+		else {
+			$(theItem).children (".spPermaLink").each (function () {
+				$(this).children ("a").each (function () {
+					href = $(this).attr ("href");
+					});
+				});
+			}
+		return (href);
+		}
+	function getPostText (theItem) { //used in prompts, for example -- 12/16/18 by DW
+		var theClass = $(theItem).attr ("class"), theText;
+		switch (theClass) {
+			case "divSingularItem":
+				theText = $(theItem).text ();
+				break;
+			case "divTitledItem":
+				$(theItem).children (".divTitle").each (function () {
+					$(this).children ("a").each (function () {
+						var myhref = $(this).attr ("href");
+						if (myhref !== undefined) {
+							theText = $(this).text ();
+							}
+						});
+					});
+				break;
+			}
+		return (theText);
+		}
 	function setupLikes () {
 		$(".divTitledItem, .divSingularItem").each (function () {
 			var theText = maxStringLength ($(this).text (), 25);
@@ -326,34 +376,7 @@ var ctLikesInPage = 0; //11/10/18 by DW
 				$(this).attr ("data-likesetup", true);
 				$(this).append ("<span id=\"" + id + "\"></span>");
 				
-				var href = undefined;
-				if (this.className == "divTitledItem") {
-					if (config.flHomePage) {
-						$(this).children (".divTitle").each (function () {
-							$(this).children ("a").each (function () {
-								var myhref = $(this).attr ("href");
-								if (myhref !== undefined) {
-									href = myhref;
-									}
-								});
-							});
-						}
-					else {
-						href = window.location.href;
-						}
-					}
-				else {
-					$(this).children (".spPermaLink").each (function () {
-						$(this).children ("a").each (function () {
-							href = $(this).attr ("href");
-							});
-						});
-					}
-				
-				
-				
-				
-				
+				var href = getPostPermalink (this); //12/15/18 by DW
 				getLikes (href, function (err, theLikes) {
 					if (err) {
 						console.log ("setupLikes: err.message == " + err.message);
@@ -363,6 +386,60 @@ var ctLikesInPage = 0; //11/10/18 by DW
 						}
 					});
 				}
+			});
+		}
+//twitter comments -- 12/14/18 by DW
+	const tweetCommentHashtag = "#scriptingnews";
+	const ctUrlInTweetChars = 23;
+	
+	function startTweetDialog (thePrompt, callback) {
+		var tweetEditorOptions = {
+			ctHashTagChars: tweetCommentHashtag.length + 1 + ctUrlInTweetChars + 1, 
+			prompt: thePrompt,
+			placeholderText: "This text will appear in the body of your tweet.",
+			savedTweetText: "",
+			flCustomHtml: false,
+			flCancelButton: true
+			}
+		startTweetEditor ("idMyTweetEditor", tweetEditorOptions, callback);
+		$("#idTweetDialog").modal ("show");
+		}
+	function closeTweetDialog () {
+		$("#idTweetDialog").modal ("hide");
+		}
+	function postTweetComment (tweetText, urlPermalink) {
+		tweetText += " " + tweetCommentHashtag + " " + urlPermalink;
+		console.log ("postTweetComment: tweetText == " + tweetText);
+		twStorageData.urlTwitterServer = urlLikeServer;
+		twTweet (tweetText, "", function (data) {
+			closeTweetDialog ();
+			var urlTweet = "https://twitter.com/" + twGetScreenName () + "/status/" + data.id_str;
+			window.open (urlTweet);
+			});
+		}
+	function setupTwitterComments () {
+		const shareIcon = "<i class=\"fa fa-retweet\"></i>";
+		const maxTextLengthForPrompt = 50;
+		$(".divTitledItem, .divSingularItem").each (function () {
+			var urlPermalink = getPostPermalink (this); 
+			var theText = getPostText (this);
+			var theIcon = "<a title=\"Click here to RT in Twitter.\">" + shareIcon + "</a>";
+			var htmltext = "<span class=\"spTwitterComment\">" + theIcon + "</span>";
+			var theObject = $(htmltext);
+			$(theObject).click (function () {
+				ifConnected ("Sign on to Twitter to enable comments?", function () {
+					var thePrompt = "RT: " + maxLengthString (theText, maxTextLengthForPrompt);
+					startTweetDialog (thePrompt, function (tweetText) {
+						if (tweetText === undefined) { //user clicked Cancel
+							closeTweetDialog ();
+							}
+						else {
+							postTweetComment (tweetText, urlPermalink);
+							}
+						});
+					});
+				});
+			$(this).append (theObject);
 			});
 		}
 
@@ -774,6 +851,7 @@ function startup () {
 			setupExpandableImages (); //7/24/17 by DW
 			setupExpandableVideo (); //10/9/17 by DW
 			setupExpandableOutline (); //5/15/18 by DW
+			setupTwitterComments (); //12/14/18 by DW
 			setupLikes (); //11/8/18 by DW
 			if (modalImageViewStartup !== undefined) { //6/25/18 by DW
 				modalImageViewStartup (); 
