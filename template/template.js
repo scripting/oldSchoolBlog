@@ -407,14 +407,41 @@ var ctLikesInPage = 0; //11/10/18 by DW
 	function closeTweetDialog () {
 		$("#idTweetDialog").modal ("hide");
 		}
-	function postTweetComment (tweetText, urlPermalink) {
-		tweetText += " " + tweetCommentHashtag + " " + urlPermalink;
+	function addItemToFeed (params, callback) {
+		params.oauth_token = localStorage.twOauthToken;
+		params.oauth_token_secret = localStorage.twOauthTokenSecret;
+		serverCall ("addtofeed", params, function (err, jsontext) {
+			if (err) {
+				console.log ("addItemToFeed: err == " + jsonStringify (err));
+				if (callback !== undefined) {
+					callback (err);
+					}
+				}
+			else {
+				var jstruct = JSON.parse (jsontext);
+				if (callback !== undefined) {
+					callback (undefined, jstruct);
+					}
+				}
+			});
+		}
+	function postTweetComment (editedText, urlPermalink) {
+		var tweetText = editedText + " " + tweetCommentHashtag + " " + urlPermalink;
 		console.log ("postTweetComment: tweetText == " + tweetText);
 		twStorageData.urlTwitterServer = urlLikeServer;
 		twTweet (tweetText, "", function (data) {
 			closeTweetDialog ();
 			var urlTweet = "https://twitter.com/" + twGetScreenName () + "/status/" + data.id_str;
 			window.open (urlTweet);
+			var item = {
+				link: urlTweet, 
+				text: editedText,
+				category: tweetCommentHashtag,
+				permalink: urlTweet 
+				};
+			addItemToFeed (item, function (err, data) {
+				console.log (jsonStringify (data));
+				});
 			});
 		}
 	function setupTwitterComments () {
