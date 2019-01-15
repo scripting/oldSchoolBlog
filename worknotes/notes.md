@@ -1,6 +1,6 @@
 * 1/15/19; 5:54:30 PM by DW
    * Problem reported by Brent Simmons:
-      * If I go to scripting.com, then click the Links tab, then click the Blog tab, I don�t see like buttons or counts on the page. (Using Safari on latest MacOS.)
+      * If I go to scripting.com, then click the Links tab, then click the Blog tab, I don't see like buttons or counts on the page. (Using Safari on latest MacOS.)
 * 12/16/18; 11:48:42 AM by DW
    * More work on Twitter comments
       * The symbolic characters in the buttons are lower opacity
