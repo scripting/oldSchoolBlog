@@ -1,3 +1,8 @@
+* 2/11/19; 9:22:04 AM by DW
+   * read config.json every minute
+      * so you don't have to relaunch the app to change something in the config
+   * in EO, support a new header element that says what the id for the blog is
+      * that way when we send the build message to the old school server, it knows how to refer to the current blog
 * 1/15/19; 5:54:30 PM by DW
    * Problem reported by Brent Simmons:
       * If I go to scripting.com, then click the Links tab, then click the Blog tab, I don't see like buttons or counts on the page. (Using Safari on latest MacOS.)
