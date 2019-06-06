@@ -73,12 +73,19 @@ body {
 	margin-top: 5px;
 	text-shadow: 1px 1px black;
 	}
-.divPageBody {
+.divPageBody { 
 	width: 680px;
 	margin-top: 280px;
 	margin-left: auto;
 	margin-right: auto;
 	margin-bottom: 400px;
+	}
+.divDayContainer {
+	background-color: white;
+	padding: 50px;
+	padding-top: 30px;
+	padding-bottom: 30px;
+	border: 1px solid silver;
 	}
 .divDayTitle {
 	font-family: "Oswald";
@@ -165,22 +172,21 @@ body {
 		z-index: 20;
 		}
 	.divVersionNumber {
-		
 		position: absolute; 
 		top: 5;
 		left: 95%;
-		
 		font-size: 12px;
-		z-index: 20;
-		
 		color: black;
 		background-color: white;
-		padding: 2px;
-		padding-left: 4px;
-		padding-right: 4px;
-		line-height: 1em;
+		padding-left: 5px;
+		padding-right: 5px;
+		z-index: 20;
 		border: 1px solid gray;
-		opacity: .7;
+		opacity: 0.5;
+		cursor: pointer;
+		}
+	.divVersionNumber:hover {
+		opacity: 1;
 		}
 	.divSnapIcon a {
 		display: block;
@@ -506,6 +512,33 @@ body {
 		left: 10;
 		top: 10;
 		}
+/*  4/22/19 by DW -- connect item, chat */
+	.divToggleConnect {
+		position: absolute;
+		top: 5;
+		left: 5;
+		min-width: 58;
+		z-index: 20;
+		background-color: white;
+		border: 1px solid gray;
+		font-size: 12px;
+		padding-left: 5px;
+		padding-right: 5px;
+		cursor: pointer;
+		opacity: 0.5;
+		}
+	.divToggleConnect a {
+		color: black;
+		}
+	.divToggleConnect:hover {
+		opacity: 1;
+		}
+	.divChatMsgContainer {
+		border: 1px solid gainsboro;
+		}
+	.divChatBottomLine .spLikes {
+		font-size: 14px;
+		}
 
 /* styles for phone */
 	@media only screen 
@@ -581,11 +614,20 @@ body {
 		.divLastScriptingUpdate {
 			display: none;
 			}
-		
 		 #discuss {
 			display: none;
 			}
-		
+		.modal, .divTweetDialog { /*  1/23/19 by DW -- so the confirm dialog fits on iphone screens, per Dries's report */
+			width: 90%;
+			margin-left: auto;
+			margin-right: auto;
+			left: 5%;
+			}
+		.divTweetDialog { /*  1/23/19 by DW */
+			width: 90%;
+			margin-left: auto;
+			margin-right: auto;
+			}
 		}
 /* styles for tablet */
 	@media only screen and (min-device-width: 768px) and (max-device-width: 1024px) {

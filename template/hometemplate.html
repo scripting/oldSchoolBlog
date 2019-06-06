@@ -57,6 +57,9 @@
 		<link rel="stylesheet" type="text/css" href="http://fargo.io/cms/snap/snap.css" />
 		<link rel="stylesheet" type="text/css" href="http://fargo.io/code/shared/reader.css" />
 		
+		<script src="http://scripting.com/chat/code/chatapp.js"></script>
+		<link href="http://scripting.com/chat/code/chatstyles.css" rel="stylesheet" type="text/css">
+		
 		<link href="http://fargo.io/code/shared/oldschool/daytemplate.css?x=10" rel="stylesheet" type="text/css">
 		<script src="http://fargo.io/code/shared/oldschool/daytemplate.js?x=10"></script>
 		
@@ -77,6 +80,7 @@
 					</div>
 				</div>
 			</div>
+		<div class="divToggleConnect"><a onclick="chatToggleConnect ();" id="idToggleConnect"></a></div><div>&nbsp;</div>
 		<div class="divVersionNumber" id="idVersionNumber">
 			</div>
 		<div class="divPagetop">
@@ -98,6 +102,7 @@
 			<div class="divFooter">
 				<p>[%copyright%]</p>
 				<p>Last update: [%now%].</p>
+				<p id="idSnarkySlogan"></p>
 				[%socialMediaLinks%]
 				</div>
 			</div>

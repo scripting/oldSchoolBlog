@@ -1,4 +1,4 @@
-var myVersion = "0.6.12";
+var myVersion = "0.6.15";
 var mySnap, flSnapDrawerOpen = false;
 var urlSidebarOpml = "http://scripting.com/misc/menubar.opml";
 var drawerWidth = 300;
@@ -13,7 +13,7 @@ var ctLikesInPage = 0; //11/10/18 by DW
 
 
 //tabs -- 9/11/17 by DW
-	const tabs = {
+	var tabs = {
 		blog: {
 			enabled: true,
 			path: "index.html",
@@ -41,13 +41,13 @@ var ctLikesInPage = 0; //11/10/18 by DW
 			urlRiver: "http://radio3.io/rivers/iowa.js",
 			click: viewRiverTab
 			},
-		discuss: {
+		chat: {
 			enabled: true,
-			path: "discuss.html",
-			title: "Discuss",
+			path: "chat.html",
+			title: "Chat",
 			icon: "comment-o",
-			htmltext: "<div class=\"divScriptingDiscuss\" id=\"idScriptingDiscuss\" data-title=\"Discuss\"></div>",
-			click: viewDiscussTab
+			htmltext: "<div class=\"divChatArea\" id=\"idChatArea\" data-title=\"Chat\"></div>",
+			click: viewChatTab
 			},
 		about: {
 			enabled: true,
@@ -138,6 +138,10 @@ var ctLikesInPage = 0; //11/10/18 by DW
 	function viewDiscussTab (callback) {
 		setTabContent (tabs.discuss.htmltext);
 		viewDiscussPage ();
+		}
+	function viewChatTab (callback) { //4/24/19 by DW
+		setTabContent (tabs.chat.htmltext);
+		viewChatPage ();
 		}
 	function viewAboutTab (callback) {
 		setTabContent (tabs.about.htmltext);
@@ -467,6 +471,77 @@ var ctLikesInPage = 0; //11/10/18 by DW
 					});
 				});
 			$(this).append (theObject);
+			});
+		}
+//chat -- 4/18/19 by DW
+	const chatConsts = {
+		urlChatServer: "http://chat.scripting.com/",
+		urlChatSocket: "ws://chat.scripting.com:1413/",
+		urlChatHtml: "http://fargo.io/code/shared/oldschool/chattemplate.html",
+		leadingQuestion: "",
+		editorPlaceholderText: "What's happening?"
+		};
+	
+	function chatToggleConnect () {
+		twToggleConnectCommand ();
+		updateTwitterButton ();
+		}
+	function updateTwitterButton () {
+		var buttontext = twStorageConsts.fontAwesomeIcon + " Sign " + ((twIsTwitterConnected ()) ? "off" : "on");
+		$("#idToggleConnect").html (buttontext);
+		}
+	function getChatUserInfo (callback) {
+		if (twIsTwitterConnected ()) {
+			var paramtable = {
+				oauth_token: localStorage.twOauthToken,
+				oauth_token_secret: localStorage.twOauthTokenSecret
+				}
+			var url = chatConsts.urlChatServer + "getuserinfo?" + twBuildParamList (paramtable, false);
+			readHttpFile (url, function (jsontext) { 
+				var userinfo;
+				if (jsontext !== undefined) {
+					userinfo = JSON.parse (jsontext);
+					console.log ("getUserInfo: userinfo == " + jsonStringify (userinfo));
+					}
+				if (callback !== undefined) {
+					callback (undefined, userinfo);
+					}
+				});
+			}
+		else {
+			if (callback !== undefined) {
+				callback ();
+				}
+			}
+		}
+	function viewChatPage () { //4/18/19 by DW
+		$("#idDayContainer").css ("background-color", "whitesmoke"); //4/20/19 by DW
+		readHttpFile (chatConsts.urlChatHtml, function (chatHtmltext) { 
+			$("#idChatArea").html (chatHtmltext);
+			getChatUserInfo (function (err, userinfo) {
+				const chatOptions = {
+					urlChatServer: chatConsts.urlChatServer,
+					urlChatSocket: chatConsts.urlChatSocket,
+					editorPlaceholderText: chatConsts.editorPlaceholderText,
+					minSecsBetwAutoSave: 3,
+					userInfoFromTwitter: userinfo,
+					newMessageCallback: function (jstruct) {
+						},
+					updatedMessageCallback: function (jstruct) {
+						},
+					getConfigCallback: function () {
+						return (chatConsts);
+						},
+					processTextCallback: function (s) {
+						return (emojiProcess (s));
+						}
+					};
+				myChatApp = new chatApp (chatOptions, function () {
+					$("#idLeadingQuestion").text (chatConsts.leadingQuestion);
+					$("#idMainColumn").css ("visibility", "visible");
+					self.setInterval (everySecond, 1000); 
+					});
+				});
 			});
 		}
 
@@ -816,14 +891,31 @@ function viewLastUpdateString () { //9/28/17 by DW
 		$("#idLastScriptingUpdate").html ("Updated: " + whenstring + ".");
 		}
 	}
+function updateSnarkySlogan () { //1/23/19 by DW
+	$("#idSnarkySlogan").html (getRandomSnarkySlogan ());
+	}
 function everyMinute () {
 	viewLastUpdateString ();
+	updateSnarkySlogan (); //1/23/19 by DW
 	}
 function everySecond () {
+	}
+function setupJavaScriptFeatures () { //1/15/19 by DW
+	setupXrefs (); //7/13/17 by DW
+	setupTweets (); //7/24/17 by DW
+	setupExpandableImages (); //7/24/17 by DW
+	setupExpandableVideo (); //10/9/17 by DW
+	setupExpandableOutline (); //5/15/18 by DW
+	setupTwitterComments (); //12/14/18 by DW
+	setupLikes (); //11/8/18 by DW
+	if (modalImageViewStartup !== undefined) { //6/25/18 by DW
+		modalImageViewStartup (); 
+		}
 	}
 function startup () {
 	console.log ("startup");
 	$("#idVersionNumber").text (myVersion);
+	updateTwitterButton (); //4/23/19 by DW
 	twStorageData.urlTwitterServer = urlLikeServer;
 	console.log ("startup: twStorageData.urlTwitterServer == " + twStorageData.urlTwitterServer);
 	twGetOauthParams (); //11/10/18 by DW
@@ -853,6 +945,9 @@ function startup () {
 				case "discuss":
 					savedState.currentTab ="discuss";
 					break;
+				case "chat": //4/29/19 by DW
+					savedState.currentTab ="chat";
+					break;
 				}
 			if (newloc !== undefined) {
 				window.location.href = config.baseUrl + newloc;
@@ -865,6 +960,9 @@ function startup () {
 		if ($("#idRiverDisplay").length !== 0) { //it's the river page
 			viewRiverPage ();
 			}
+		if ($("#idChatArea").length !== 0) { //it's the chat page
+			viewChatPage ();
+			}
 		if ($("#idLinkblogDays").length !== 0) { //it's the linkblog page
 			window.location.href = urlLinkblogPage;
 			}
@@ -873,16 +971,8 @@ function startup () {
 			}
 		startTabsIfHomePage (function () {
 			viewLastUpdateString (); //9/28/17 by DW
-			setupXrefs (); //7/13/17 by DW
-			setupTweets (); //7/24/17 by DW
-			setupExpandableImages (); //7/24/17 by DW
-			setupExpandableVideo (); //10/9/17 by DW
-			setupExpandableOutline (); //5/15/18 by DW
-			setupTwitterComments (); //12/14/18 by DW
-			setupLikes (); //11/8/18 by DW
-			if (modalImageViewStartup !== undefined) { //6/25/18 by DW
-				modalImageViewStartup (); 
-				}
+			updateSnarkySlogan (); //1/23/19 by DW
+			setupJavaScriptFeatures ();
 			hitCounter (); 
 			if (config.flGoogleAnalytics) {
 				initGoogleAnalytics (config.appDomain, config.idGoogleAccount); 

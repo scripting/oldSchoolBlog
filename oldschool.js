@@ -1,4 +1,4 @@
-var myVersion = "0.5.25", myProductName = "oldSchool";  
+var myVersion = "0.5.29", myProductName = "oldSchool";   
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -841,16 +841,18 @@ function publishBlog (jstruct, options, callback) {
 			});
 		}
 	function publishCustomPages (callback) {
-		function pubOnePage (path, pagetitle, htmltext, callback) {
-			publishThroughTemplate (path, pagetitle, undefined, htmltext, undefined, undefined, function () {
-				if (callback !== undefined) {
-					callback ();
-					}
-				});
-			}
-		for (var i = 0; i < blogConfig.customPages.length; i++) {
-			var thePage = blogConfig.customPages [i];
-			pubOnePage (thePage.fname, thePage.title, thePage.htmltext);
+		if (blogConfig.customPages !== undefined) {
+			function pubOnePage (path, pagetitle, htmltext, callback) {
+				publishThroughTemplate (path, pagetitle, undefined, htmltext, undefined, undefined, function () {
+					if (callback !== undefined) {
+						callback ();
+						}
+					});
+				}
+			for (var i = 0; i < blogConfig.customPages.length; i++) {
+				var thePage = blogConfig.customPages [i];
+				pubOnePage (thePage.fname, thePage.title, thePage.htmltext);
+				}
 			}
 		if (callback !== undefined) {
 			callback ();
@@ -964,7 +966,6 @@ function init (configParam, callback) {
 		debugMessage ("\n" + myProductName + " v" + myVersion + portMessage + "\n");
 		readPingLog (function () {
 			var whenLastSocketUpdate = undefined, lastSocketJsontext = undefined;
-			var flScheduledEveryMinute = false;
 			var mySocket = undefined, urlUpdateSocket = undefined;
 			
 			function getBlogJsontext (blogConfig, callback) {
@@ -1014,6 +1015,7 @@ function init (configParam, callback) {
 									case "/build":
 										try {
 											var blogName = parsedUrl.query.blog, blogConfig = config.blogs [blogName];
+											debugMessage ("/build: blogName == " + blogName);
 											getBlogJsontext (blogConfig, function (jsontext) {
 												try {
 													var jstruct = JSON.parse (jsontext);
@@ -1154,13 +1156,6 @@ function init (configParam, callback) {
 							}
 						}
 					}
-				if (!flScheduledEveryMinute) { 
-					if (new Date ().getSeconds () == 0) {
-						setInterval (everyMinute, 60000); 
-						flScheduledEveryMinute = true;
-						everyMinute (); //it's the top of the minute, we have to do one now
-						}
-					}
 				for (var x in config.blogs) {
 					initSocket (config.blogs [x]);
 					}
@@ -1185,6 +1180,7 @@ function init (configParam, callback) {
 				startHttpServer ();
 				}
 			setInterval (everySecond, 1000); 
+			utils.runEveryMinute (everyMinute); //2/11/19 by DW
 			
 			if (callback !== undefined) {
 				callback ();
