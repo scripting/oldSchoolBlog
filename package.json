@@ -1,8 +1,8 @@
 {
 	"name": "oldschoolblog", 
 	"description": "Blogging in the ways of the old school.",
-	"version": "0.5.29",
-	"author": "Dave Winer <dave@smallpicture.com>",
+	"version": "0.5.45",
+	"author": "Dave Winer <dave@scripting.com>",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
@@ -21,6 +21,7 @@
 		"daverss": "*",
 		"daves3": "*", 
 		"daveopml": "*",
-		"daveutils": "*"
+		"daveutils": "*",
+		"davexmlrpc": "*"
 		}
 	}

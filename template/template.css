@@ -135,7 +135,7 @@ body {
 .spPermaLink a {
 	font-family: "Ubuntu";
 	color: purple;
-	opacity: 0.2;
+	opacity: 0.5;
 	font-weight: normal;
 	font-size: 14px;
 	cursor: pointer;
@@ -538,6 +538,14 @@ body {
 		}
 	.divChatBottomLine .spLikes {
 		font-size: 14px;
+		}
+/*  6/9/19 by DW -- move the body up by 20px */
+	.divPageBody {
+		margin-top: 240px;
+		}
+/*  10/17/19 by DW -- More button and infinite scrolling*/
+	.divMoreButton {
+		margin-top: 10px;
 		}
 
 /* styles for phone */

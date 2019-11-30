@@ -1,4 +1,4 @@
-var myVersion = "0.6.15";
+var myVersion = "0.6.16";
 var mySnap, flSnapDrawerOpen = false;
 var urlSidebarOpml = "http://scripting.com/misc/menubar.opml";
 var drawerWidth = 300;
@@ -42,7 +42,7 @@ var ctLikesInPage = 0; //11/10/18 by DW
 			click: viewRiverTab
 			},
 		chat: {
-			enabled: true,
+			enabled: false, //10/27/19 by DW
 			path: "chat.html",
 			title: "Chat",
 			icon: "comment-o",
@@ -452,25 +452,29 @@ var ctLikesInPage = 0; //11/10/18 by DW
 		const shareIcon = "<i class=\"fa fa-retweet\"></i>";
 		const maxTextLengthForPrompt = 50;
 		$(".divTitledItem, .divSingularItem").each (function () {
-			var urlPermalink = getPostPermalink (this); 
-			var theText = getPostText (this);
-			var theIcon = "<a title=\"Click here to RT in Twitter.\">" + shareIcon + "</a>";
-			var htmltext = "<span class=\"spTwitterComment\">" + theIcon + "</span>";
-			var theObject = $(htmltext);
-			$(theObject).click (function () {
-				ifConnected ("Sign on to Twitter to enable comments?", function () {
-					var thePrompt = "RT: " + maxLengthString (theText, maxTextLengthForPrompt);
-					startTweetDialog (thePrompt, function (tweetText) {
-						if (tweetText === undefined) { //user clicked Cancel
-							closeTweetDialog ();
-							}
-						else {
-							postTweetComment (tweetText, urlPermalink);
-							}
+			var flCommentSetup = getBoolean ($(this).data ("commentsetup")); //10/17/19 by DW
+			if (!flCommentSetup) { //10/17/19 by DW
+				var urlPermalink = getPostPermalink (this); 
+				var theText = getPostText (this);
+				var theIcon = "<a title=\"Click here to RT in Twitter.\">" + shareIcon + "</a>";
+				var htmltext = "<span class=\"spTwitterComment\">" + theIcon + "</span>";
+				var theObject = $(htmltext);
+				$(theObject).click (function () {
+					ifConnected ("Sign on to Twitter to enable comments?", function () {
+						var thePrompt = "RT: " + maxLengthString (theText, maxTextLengthForPrompt);
+						startTweetDialog (thePrompt, function (tweetText) {
+							if (tweetText === undefined) { //user clicked Cancel
+								closeTweetDialog ();
+								}
+							else {
+								postTweetComment (tweetText, urlPermalink);
+								}
+							});
 						});
 					});
-				});
-			$(this).append (theObject);
+				$(this).append (theObject);
+				$(this).attr ("data-commentsetup", true); //indicate that we've been here -- 10/17/19 by DW
+				}
 			});
 		}
 //chat -- 4/18/19 by DW
@@ -482,7 +486,8 @@ var ctLikesInPage = 0; //11/10/18 by DW
 		editorPlaceholderText: "What's happening?"
 		};
 	
-	function chatToggleConnect () {
+	function chatToggleConnect () { //xxx
+		twStorageData.urlTwitterServer = urlLikeServer; //8/21/19 by DW
 		twToggleConnectCommand ();
 		updateTwitterButton ();
 		}
@@ -543,6 +548,46 @@ var ctLikesInPage = 0; //11/10/18 by DW
 					});
 				});
 			});
+		}
+//how long running -- 8/9/19 by DW
+	function howLongSinceStartAsString (whenStart) {
+		var x = howLongSinceStart (whenStart);
+		function getnum (num, units) {
+			if (num != 1) {
+				units += "s";
+				}
+			return (num + " " + units);
+			}
+		return (getnum (x.years, "year") + ", " + getnum (x.months, "month") + ", " + getnum (x.days, "day") + ", " + getnum (x.hours, "hour") + ", " + getnum (x.minutes, "minute") + ", " + getnum (x.seconds, "second") + ".");
+		}
+//infinite scrolling -- 10/17/19 by DW
+	var whenLastMoreButtonClick = new Date (0);
+	var currentOldestPageDate = undefined;
+	
+	function moreButtonClick () {
+		if (currentOldestPageDate === undefined) {
+			currentOldestPageDate = config.oldestDayOnHomePage;
+			}
+		var day = dateYesterday (currentOldestPageDate);
+		var url = "http://rockaway.scripting.com:1400/day?blog=dave&day=" + day.toUTCString ();
+		currentOldestPageDate = day;
+		readHttpFileThruProxy (url, undefined, function (htmltext) {
+			if (htmltext !== undefined) {
+				$("#idTabContent").append ("<div class=\"divArchivePageDay\">" + htmltext + "</div>")
+				setupJavaScriptFeatures ();
+				}
+			});
+		}
+	function infiniteScrollHandler () {
+		window.onscroll = function (ev) {
+			if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
+				if (secondsSince (whenLastMoreButtonClick) > 1) {
+					console.log ("infiniteScrollHandler: you're at the bottom of the page");
+					whenLastMoreButtonClick = new Date ();
+					moreButtonClick (1);
+					}
+				}
+			};
 		}
 
 function setTextSize (amount) {
@@ -618,7 +663,7 @@ function setupExpandableType (attname, htmlTemplate) {
 				}
 			initWedge (parentOfTweet, function (flExpand) {
 				function exposetheObject () {
-					$(theObject).slideDown (75, undefined, function () {
+					$(theObject).slideDown (0, 0, function () {
 						$(theObject).css ("visibility", "visible");
 						});
 					}
@@ -634,7 +679,8 @@ function setupExpandableType (attname, htmlTemplate) {
 						}
 					}
 				else {
-					$(theObject).slideUp (75);
+					$(theObject).slideUp (0, 0, function () {
+						});
 					}
 				});
 			}
@@ -899,6 +945,12 @@ function everyMinute () {
 	updateSnarkySlogan (); //1/23/19 by DW
 	}
 function everySecond () {
+	$(".spRandomMotto").each (function () { //8/7/19 by DW
+		$(this).text (getRandomSnarkySlogan ());
+		});
+	$(".spHowLongRunning").each (function () { //8/9/19 by DW
+		$(this).text ("This blog has been running for: " + howLongSinceStartAsString (new Date ("10/7/1994, 12:00 PDT")));
+		});
 	}
 function setupJavaScriptFeatures () { //1/15/19 by DW
 	setupXrefs (); //7/13/17 by DW
@@ -908,14 +960,25 @@ function setupJavaScriptFeatures () { //1/15/19 by DW
 	setupExpandableOutline (); //5/15/18 by DW
 	setupTwitterComments (); //12/14/18 by DW
 	setupLikes (); //11/8/18 by DW
-	if (modalImageViewStartup !== undefined) { //6/25/18 by DW
-		modalImageViewStartup (); 
+	try { //9/21/19 by DW
+		if (modalImageViewStartup !== undefined) { //6/25/18 by DW
+			modalImageViewStartup (); 
+			}
+		}
+	catch (err) {
+		}
+	}
+function movePageDownForOldArchivePages () { //9/21/19 by DW
+	var fladjust = !dayGreaterThanOrEqual (opmlHead.dateModified, "21 Apr 2019")
+	if (fladjust) {
+		$(".divPageBody").css ("margin-top", "270px")
 		}
 	}
 function startup () {
 	console.log ("startup");
 	$("#idVersionNumber").text (myVersion);
 	updateTwitterButton (); //4/23/19 by DW
+	movePageDownForOldArchivePages (); //9/21/19 by DW
 	twStorageData.urlTwitterServer = urlLikeServer;
 	console.log ("startup: twStorageData.urlTwitterServer == " + twStorageData.urlTwitterServer);
 	twGetOauthParams (); //11/10/18 by DW
@@ -978,7 +1041,8 @@ function startup () {
 				initGoogleAnalytics (config.appDomain, config.idGoogleAccount); 
 				}
 			self.setInterval (everySecond, 1000); 
-			self.setInterval (everyMinute, 60000); 
+			runEveryMinute (everyMinute);
+			infiniteScrollHandler (); //10/17/19 by DW
 			});
 		});
 	}

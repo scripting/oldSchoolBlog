@@ -1,3 +1,8 @@
+* 11/30/19; 9:43:05 AM by DW
+   * publishThroughTemplate used to have a parameter pagedescription which is the description used in the Twitter and Facebook metadata. In most calls it's undefined. 
+      * Changed it to a metadata object that includes a description element. This creates room for other metadata to be passed without adding more parameters to its already loaded parameter list. 
+      * Add a title property to the metadata object, if present, use this instead of page title in the metadata. I want a shorter version here, without the "Scripting News: " prefix. 
+      * Add metaImage property to set the image metadata for Twitter and Facebook. Can't call it image because that would cause the image to be displayed on the HTML page. Facebook says the image must be minimum 200 by 200.
 * 2/11/19; 9:22:04 AM by DW
    * read config.json every minute
       * so you don't have to relaunch the app to change something in the config

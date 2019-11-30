@@ -1,4 +1,4 @@
-var myVersion = "0.5.29", myProductName = "oldSchool";   
+var myVersion = "0.5.45", myProductName = "oldSchool";   
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -16,6 +16,7 @@ const marked = require ("marked");
 const fs = require ("fs");
 const querystring = require ("querystring");
 const opml = require ("daveopml");
+const xmlrpc = require ("davexmlrpc"); //10/14/19 by DW
 
 var baseOutputPath = "/scripting.com/reboot/test/v2/", baseOutputUrl = "http:/" + baseOutputPath;
 var urlDefaultTemplate = "http://fargo.io/code/shared/oldschool/daytemplate.html"
@@ -25,7 +26,7 @@ var pingLog = [], pathPingLog = "/scripting.com/misc/pingLog.json", flPingLogCha
 var fnameConfig = "config.json";
 
 var config = { //defaults
-	port: 1400,
+	port: process.env.PORT || 1400, //11/22/19 by DW
 	flHttpEnabled: true,
 	rssFname: "rss.xml",
 	rssJsonFname: "rss.json",
@@ -38,10 +39,36 @@ var config = { //defaults
 	daysFolder: "data/days/",
 	itemsFolder: "data/items/",
 	debugMessageCallback: undefined, //8/8/17 by DW
+	flXmlRpcPing: false, //11/22/19 by DW
+	urlPingEndpoint: "http://githubstorypage.scripting.com/rpc2", //11/22/19 by DW
 	blogs: {
 		}
 	};
 
+function pingForStoryPage () { //10/14/19 by DW
+	if (config.flXmlRpcPing) {
+		xmlrpc.client (config.urlPingEndpoint, "ping", {}, "xml", function (err, data) {
+			if (err) {
+				console.log ("sendPing: err.message == " + err.message);
+				}
+			});
+		}
+	}
+function getDayHtml (blogName, theDay, callback) { //10/17/19 by DW
+	var blogConfig = config.blogs [blogName]
+	var relpath = utils.getDatePath (new Date (theDay), false) + ".html";
+	var f = config.pagesFolder + blogName + "/" + relpath;
+	console.log ("getDayHtml: f == " + f);
+	fs.readFile (f, function (err, data) {
+		const type = "text/html";
+		if (err) {
+			callback (404, type, "Not found.")
+			}
+		else {
+			callback (200, type, data.toString ())
+			}
+		});
+	}
 function publishFile (path, data, type, acl, callback, metadata) { //8/14/17 by DW
 	s3.newObject (path, data, type, acl, callback, metadata);
 	}
@@ -242,7 +269,7 @@ function publishBlog (jstruct, options, callback) {
 	function glossaryProcess (s) {
 		return (utils.multipleReplaceAll (s, blogConfig.glossary));
 		}
-	function publishThroughTemplate (relpath, pagetitle, pagedescription, htmltext, templatetext, addToConfig, callback) {
+	function publishThroughTemplate (relpath, pagetitle, metadata, htmltext, templatetext, addToConfig, callback) {
 		function getSocialMediaLinks () {
 			var htmltext = "", indentlevel = 0, head = blogConfig.jstruct.head;
 			function add (s) {
@@ -320,13 +347,21 @@ function publishBlog (jstruct, options, callback) {
 			function add (s) {
 				htmltext += utils.filledString ("\t", indentlevel) + s + "\n";
 				}
+			function addImage (urlImage) {
+				add ("<meta name=\"twitter:image:src\" content=\"" + urlImage + "\">");
+				}
 			add ("<!-- Twitter metadata -->"); indentlevel++;
 			add ("<meta name=\"twitter:card\" content=\"summary_large_image\">");
 			add ("<meta name=\"twitter:site\" content=\"@" + blogConfig.twitterScreenName + "\">");
-			add ("<meta name=\"twitter:title\" content=\"" + pagetitle + "\">");
-			add ("<meta name=\"twitter:description\" content=\"" + pagedescription + "\">");
-			if (blogConfig.flIncludeImageInMetadata) { //6/27/17 by DW
-				add ("<meta name=\"twitter:image:src\" content=\"" + blogConfig.urlHeaderImage + "\">");
+			add ("<meta name=\"twitter:title\" content=\"" + metadata.title + "\">");
+			add ("<meta name=\"twitter:description\" content=\"" + metadata.description + "\">");
+			if (metadata.image !== undefined) { //11/30/19 by DW
+				addImage (metadata.image);
+				}
+			else {
+				if (blogConfig.flIncludeImageInMetadata) { //6/27/17 by DW
+					addImage (blogConfig.urlHeaderImage);
+					}
 				}
 			return (htmltext);
 			}
@@ -335,20 +370,34 @@ function publishBlog (jstruct, options, callback) {
 			function add (s) {
 				htmltext += utils.filledString ("\t", indentlevel) + s + "\n";
 				}
+			function addImage (urlImage) {
+				add ("<meta property=\"og:image\" content=\"" + urlImage + "\" />");
+				}
 			add ("<!-- Facebook metadata -->"); indentlevel++;
 			add ("<meta property=\"og:type\" content=\"website\" />");
 			add ("<meta property=\"og:site_name\" content=\"" + blogConfig.title + "\" />");
-			add ("<meta property=\"og:title\" content=\"" + pagetitle + "\" />");
+			add ("<meta property=\"og:title\" content=\"" + metadata.title + "\" />");
 			add ("<meta property=\"og:url\" content=\"" + blogConfig.baseUrl + relpath + "\" />");
-			add ("<meta property=\"og:description\" content=\"" + pagedescription + "\" />");
-			if (blogConfig.flIncludeImageInMetadata) { //6/27/17 by DW
-				add ("<meta property=\"og:image\" content=\"" + blogConfig.urlHeaderImage + "\" />");
+			add ("<meta property=\"og:description\" content=\"" + metadata.description + "\" />");
+			if (metadata.image !== undefined) { //11/30/19 by DW
+				addImage (metadata.image);
+				}
+			else {
+				if (blogConfig.flIncludeImageInMetadata) { //6/27/17 by DW
+					addImage (blogConfig.urlHeaderImage);
+					}
 				}
 			return (htmltext);
 			}
 		
-		if (pagedescription === undefined) { //1/6/18 by DW
-			pagedescription = blogConfig.description;
+		if (metadata === undefined) { //11/30/19 by DW
+			metadata = new Object ();
+			}
+		if (metadata.title === undefined) { //11/30/19 by DW
+			metadata.title = pagetitle;
+			}
+		if (metadata.description === undefined) { //1/6/18 by DW
+			metadata.description = blogConfig.description;
 			}
 		var pagetable = {
 			pagetitle: pagetitle,
@@ -485,7 +534,11 @@ function publishBlog (jstruct, options, callback) {
 			var daypath = utils.getDatePath (new Date (item.created), true);
 			var relpath = daypath + utils.stringDelete (getPermalinkString (item.created), 1, 1) + ".html";
 			var pagetitle = blogConfig.title + ": " + item.text;
-			var pagedescription = item.description;
+			var metadata = {
+				title: item.text,
+				description: item.description,
+				image: item.metaImage
+				};
 			
 			function formatTimeLine (when) { //2/11/18 by DW
 				return (dateFormat (when, "dddd mmmm d, yyyy; h:MM TT Z"));
@@ -496,10 +549,11 @@ function publishBlog (jstruct, options, callback) {
 			var htmltext = "<div class=\"divTitledItem\">" + posttimeline + titleline + itemsubtext + "</div>";
 			
 			
-			publishThroughTemplate (relpath, pagetitle, pagedescription, htmltext, undefined, undefined, function () {
+			publishThroughTemplate (relpath, pagetitle, metadata, htmltext, undefined, undefined, function () {
 				if (callback !== undefined) {
 					callback ();
 					}
+				pingForStoryPage (); //10/14/19 by DW
 				});
 			}
 		
@@ -550,18 +604,22 @@ function publishBlog (jstruct, options, callback) {
 		}
 	function publishHomePage (callback) {
 		var htmltext = "", pagetitle = blogConfig.title, ctDays = blogConfig.maxDaysOnHomePage;
+		var newestDayOnHomePage = undefined, oldestDayOnHomePage = undefined; //10/17/19 by DW
 		
 		var theDay = new Date ();
+		newestDayOnHomePage = theDay;
 		for (var i = 0; i < ctDays; i++) {
 			var dayInArchive = blogConfig.htmlArchive [utils.getDatePath (theDay, false)];
 			if (dayInArchive !== undefined) {
 				htmltext += "<div class=\"divArchivePageDay\">" + dayInArchive.htmltext + "</div>";
 				}
+			oldestDayOnHomePage = theDay;
 			theDay = utils.dateYesterday (theDay);
 			}
 		
 		var addToConfig = {
-			flHomePage: true //so JS code can tell that it should add the tabs
+			flHomePage: true, //so JS code can tell that it should add the tabs
+			newestDayOnHomePage, oldestDayOnHomePage //10/17/19 by DW
 			};
 		publishThroughTemplate (config.indexHtmlFname, pagetitle, undefined, htmltext, blogConfig.homePageTemplatetext, addToConfig, function () {
 			var path = blogConfig.basePath + config.homeHtmlFname;
@@ -1034,6 +1092,9 @@ function init (configParam, callback) {
 										catch (err) {
 											doHttpReturn (503, "text/plain", err.message);
 											}
+										break;
+									case "/day": //10/17/19 by DW
+										getDayHtml (parsedUrl.query.blog, parsedUrl.query.day, doHttpReturn);
 										break;
 									default: 
 										doHttpReturn (404, "text/plain", "Not found.");
