@@ -543,9 +543,14 @@ body {
 	.divPageBody {
 		margin-top: 240px;
 		}
-/*  10/17/19 by DW -- More button and infinite scrolling*/
+/*  10/17/19 by DW -- More button and infinite scrolling */
 	.divMoreButton {
 		margin-top: 10px;
+		}
+/*  12/17/19 by DW -- Make code look un-crappy, bootstrap makes it red? why. oh the humanity. */
+	code {
+		color: inherit;
+		white-space: normal;
 		}
 
 /* styles for phone */

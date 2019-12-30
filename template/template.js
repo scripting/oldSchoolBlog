@@ -739,6 +739,39 @@ function setupExpandableDisqusThreads () {
 	startDisqus (myDisqusGroup);
 	}
 function setupTweets () {
+	function getEmbedCode (id, callback) {
+		var url = "http://twitterembed.scripting.com/getembedcode?id=" + encodeURIComponent (id);
+		$.ajax ({
+			type: "GET",
+			url: url,
+			success: function (data) {
+				callback (data);
+				},
+			error: function (status) { 
+				console.log ("getEmbedCode: error == " + JSON.stringify (status, undefined, 4));
+				callback (undefined); 
+				},
+			dataType: "json"
+			});
+		}
+	function viewTweet (idTweet, idDiv, callback) { //12/22/19 by DW
+		var idViewer = "#" + idDiv, now = new Date ();
+		if (idTweet == undefined) {
+			$(idViewer).html ("");
+			}
+		else {
+			getEmbedCode (idTweet, function (struct) {
+				$(idViewer).css ("visibility", "hidden");
+				$(idViewer).html (struct.html);
+				if (callback != undefined) {
+					callback (struct);
+					}
+				});
+			}
+		$(idViewer).on ("load", function () {
+			$(idViewer).css ("visibility", "visible");
+			});
+		}
 	$(".divPageBody li, .divSingularItem").each (function () {
 		var parentOfTweet = this, tweetObject = undefined;
 		var theText = $(this).text ();
@@ -752,6 +785,7 @@ function setupTweets () {
 		if (urlTweet !== undefined) {
 			let idTweet = stringLastField (urlTweet, "/");
 			initWedge (parentOfTweet, function (flExpand) {
+				$(this).blur (); //12/22/19 by DW
 				function exposeTweetObject () {
 					$(tweetObject).slideDown (75, undefined, function () {
 						$(tweetObject).on ("load", function () {
@@ -769,7 +803,7 @@ function setupTweets () {
 							console.log ("setupTweets: twStorageData.urlTwitterServer == undefined");
 							twStorageData.urlTwitterServer = urlLikeServer; //whack the bug -- 11/23/18 by DW
 							}
-						twViewTweet (idTweet, tweetObjectId, function () {
+						viewTweet (idTweet, tweetObjectId, function () {
 							exposeTweetObject ();
 							});
 						}

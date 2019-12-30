@@ -1,4 +1,4 @@
-var myVersion = "0.5.45", myProductName = "oldSchool";   
+var myVersion = "0.5.48", myProductName = "oldSchool";   
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -358,6 +358,10 @@ function publishBlog (jstruct, options, callback) {
 			if (metadata.image !== undefined) { //11/30/19 by DW
 				addImage (metadata.image);
 				}
+			if (metadata.body !== undefined) { //12/22/19 by DW
+				add ("<meta name=\"twitter:body\" content=\"" + new Buffer (metadata.body).toString ("base64") + "\">");
+				
+				}
 			else {
 				if (blogConfig.flIncludeImageInMetadata) { //6/27/17 by DW
 					addImage (blogConfig.urlHeaderImage);
@@ -530,14 +534,58 @@ function publishBlog (jstruct, options, callback) {
 			add ("</ul>"); indentlevel--;
 			return (htmltext);
 			}
-		function buildStoryPage (item, itemsubtext, callback) { //12/28/17 by DW
+		
+		function getItemSubsMarkdown (storystruct) { //12/22/19 by DW
+			var markdowntext = "", indentlevel = 0;
+			function add (s) {
+				markdowntext += utils.filledString ("\t", indentlevel) + s + "\n";
+				}
+			function getItemText (item) {
+				var img = "";
+				if (item.image !== undefined) {
+					img = "<img src=\"" + item.image + "\" border=\"0\" align=\"right\">";
+					}
+				return (img + item.text);
+				}
+			if (storystruct.subs === undefined) { //it's an untitled story
+				add (getItemText (storystruct));
+				console.log (markdowntext);
+				}
+			else { //it's a titled story
+				add ("# " + storystruct.text);
+				storystruct.subs.forEach (function (sub, ix) {
+					if (sub.subs !== undefined) {
+						var flNumberedSubs = utils.getBoolean (sub.flNumberedSubs);
+						var flBulletedSubs = utils.getBoolean (sub.flBulletedSubs);
+						add (getItemText (sub));
+						sub.subs.forEach (function (listitem, ixitem) {
+							if (flNumberedSubs) {
+								add ((ixitem + 1) + ". " + getItemText (listitem));
+								}
+							else {
+								add ("* " + getItemText (listitem));
+								}
+							});
+						add ("");
+						}
+					else {
+						add (getItemText (sub));
+						add ("");
+						}
+					});
+				}
+			return (markdowntext);
+			}
+		
+		function buildStoryPage (item, itemsubtext, itemsubmarkdown, callback) { //12/28/17 by DW
 			var daypath = utils.getDatePath (new Date (item.created), true);
 			var relpath = daypath + utils.stringDelete (getPermalinkString (item.created), 1, 1) + ".html";
 			var pagetitle = blogConfig.title + ": " + item.text;
 			var metadata = {
 				title: item.text,
 				description: item.description,
-				image: item.metaImage
+				image: item.metaImage,
+				body: itemsubmarkdown //12/22/19 by DW
 				};
 			
 			function formatTimeLine (when) { //2/11/18 by DW
@@ -571,10 +619,11 @@ function publishBlog (jstruct, options, callback) {
 				add ("<div class=\"divTitledItem\">"); indentlevel++;
 				add ("<div class=\"divTitle\">" + getRenderedText (item, true) + "</div>");
 				var itemsubtext = getItemSubs (item, 0, item.permalink);
+				var itemsubmarkdown = getItemSubsMarkdown (item, 0);
 				add (itemsubtext);
 				add ("</div>"); indentlevel--;
 				
-				buildStoryPage (item, itemsubtext); //12/28/17 by DW
+				buildStoryPage (item, itemsubtext, itemsubmarkdown); //12/28/17 by DW
 				}
 			}
 		

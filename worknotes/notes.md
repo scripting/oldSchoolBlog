@@ -1,3 +1,5 @@
+* 12/30/19; 12:09:56 PM by DW
+   * A <a href="atts.md">cheat sheet</a> for current set of attributes. 
 * 11/30/19; 9:43:05 AM by DW
    * publishThroughTemplate used to have a parameter pagedescription which is the description used in the Twitter and Facebook metadata. In most calls it's undefined. 
       * Changed it to a metadata object that includes a description element. This creates room for other metadata to be passed without adding more parameters to its already loaded parameter list. 
