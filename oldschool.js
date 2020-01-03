@@ -1,4 +1,4 @@
-var myVersion = "0.5.48", myProductName = "oldSchool";   
+var myVersion = "0.5.50", myProductName = "oldSchool";   
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -453,7 +453,9 @@ function publishBlog (jstruct, options, callback) {
 			}
 		function getRenderedText (item, flTextIsTitle, urlStoryPage) {
 			var s = emojiProcess (glossaryProcess (item.text));
-			
+			if (item.inlineImage !== undefined) { //1/2/20 by DW
+				s = "<center><img class=\"imgInline\" src=\"" + item.inlineImage + "\"></center>" + s;
+				}
 			switch (item.type) {
 				case "link":
 					var parsedUrl = urlpack.parse (item.url, true), host = parsedUrl.host;
