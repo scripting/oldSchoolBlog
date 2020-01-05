@@ -452,9 +452,10 @@ function publishBlog (jstruct, options, callback) {
 			htmltext += utils.filledString ("\t", indentlevel) + s + "\n";
 			}
 		function getRenderedText (item, flTextIsTitle, urlStoryPage) {
-			var s = emojiProcess (glossaryProcess (item.text));
+			var s = emojiProcess (glossaryProcess (item.text)), flInlineImage = false;
 			if (item.inlineImage !== undefined) { //1/2/20 by DW
 				s = "<center><img class=\"imgInline\" src=\"" + item.inlineImage + "\"></center>" + s;
+				flInlineImage = true;
 				}
 			switch (item.type) {
 				case "link":
@@ -494,6 +495,11 @@ function publishBlog (jstruct, options, callback) {
 			
 			var title = "Direct link to this item.";
 			s = "<a name=\"" + ourLink + "\"></a>" + imgHtml + s + "<span class=\"spPermaLink\"><a href=\"" + item.permalink + "\" title=\"" + title + "\">#</a></span>";
+			
+			if (flInlineImage) { //1/3/20 by DW
+				s = "<div class=\"divInlineImage\">" + s + "</div>";
+				}
+			
 			return (s);
 			}
 		function getDataAtts (item) { //7/12/17 by DW

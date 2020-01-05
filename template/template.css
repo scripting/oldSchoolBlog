@@ -552,6 +552,19 @@ body {
 		color: inherit;
 		white-space: normal;
 		}
+/*  1/3/20 by DW -- inlineImage styles. */
+	.divInlineImage {
+		padding: 10px;
+		padding-left: 15px;
+		padding-right: 15px;
+		border: 1px dashed silver;
+		font-size: 0.8em;
+		line-height: 130%;
+		text-align: center;
+		}
+	.imgInline {
+		margin-bottom: 10px;
+		}
 
 /* styles for phone */
 	@media only screen 
