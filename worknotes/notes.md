@@ -1,3 +1,7 @@
+* 1/6/20; 12:02:02 PM by DW
+   * when generating urls, add on a parameter with the title of the post, innercased
+      * help human beings figure it out
+         * example: <a href="http://scripting.com/2020/01/06/153015.html?title=sharingOnFacebook">http://scripting.com/2020/01/06/153015.html?title=sharingOnFacebook</a>
 * 12/30/19; 12:09:56 PM by DW
    * A <a href="atts.md">cheat sheet</a> for current set of attributes. 
 * 11/30/19; 9:43:05 AM by DW

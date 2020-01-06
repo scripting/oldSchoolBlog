@@ -1,4 +1,4 @@
-var myVersion = "0.5.50", myProductName = "oldSchool";   
+var myVersion = "0.5.51", myProductName = "oldSchool";   
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -222,6 +222,7 @@ function writePingLog (callback) {
 			}
 		});
 	}
+
 function publishBlog (jstruct, options, callback) {
 	var blogName = options.blogName; //8/14/17 by DW
 	var blogConfig = config.blogs [blogName];
@@ -478,6 +479,7 @@ function publishBlog (jstruct, options, callback) {
 			else {
 				if (item.subs !== undefined) { //12/29/17 by DW
 					item.permalink = blogConfig.baseUrl + utils.getDatePath (new Date (day.created), true) + utils.stringDelete (ourLink, 1, 1) + ".html";
+					item.permalink += "?title=" + utils.innerCaseName (item.text); //1/6/20 by DW
 					}
 				else {
 					item.permalink = urlpage + "#" + ourLink;
@@ -1049,6 +1051,7 @@ function publishBlog (jstruct, options, callback) {
 			});
 		}
 	}
+
 function readConfig (callback) { 
 	fs.readFile (fnameConfig, function (err, data) {
 		if (!err) {
