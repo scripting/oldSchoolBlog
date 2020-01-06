@@ -1252,7 +1252,9 @@ function init (configParam, callback) {
 				if (config.flHttpEnabled) { //8/14/17 by DW
 					portpart =  ", running on port " + config.port;
 					}
-				debugMessage ("\n" + now.toLocaleTimeString () + ": " + myProductName + " v" + myVersion + portpart);
+				if (now.getMinutes () == 0) { //1/6/20 by DW
+					debugMessage ("\n" + now.toLocaleTimeString () + ": " + myProductName + " v" + myVersion + portpart);
+					}
 				}
 			function everySecond () {
 				if (flBackgroundBuilds) {
