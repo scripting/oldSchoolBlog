@@ -1,4 +1,4 @@
-var myVersion = "0.5.51", myProductName = "oldSchool";   
+var myVersion = "0.5.53", myProductName = "oldSchool";   
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -479,7 +479,7 @@ function publishBlog (jstruct, options, callback) {
 			else {
 				if (item.subs !== undefined) { //12/29/17 by DW
 					item.permalink = blogConfig.baseUrl + utils.getDatePath (new Date (day.created), true) + utils.stringDelete (ourLink, 1, 1) + ".html";
-					item.permalink += "?title=" + utils.innerCaseName (item.text); //1/6/20 by DW
+					item.permalink += "?title=" + utils.innerCaseName (item.text); //1/7/20 by DW
 					}
 				else {
 					item.permalink = urlpage + "#" + ourLink;
@@ -1032,6 +1032,13 @@ function publishBlog (jstruct, options, callback) {
 		blogConfig.ownerGithubAccount = jstruct.head.ownerGithubAccount; //5/26/17 by DW
 		blogConfig.ownerLinkedinAccount = jstruct.head.ownerLinkedinAccount; //5/26/17 by DW
 		
+		if (blogConfig.calendar === undefined) { //1/9/20 by DW
+			blogConfig.calendar = new Array ();
+			}
+		if (blogConfig.htmlArchive === undefined) { //1/9/20 by DW
+			blogConfig.htmlArchive = new Object ();
+			}
+		
 		getBlogGlossary (function () {
 			getHomePageTemplate (function () {
 				getBlogTemplate (function () {
@@ -1103,9 +1110,21 @@ function init (configParam, callback) {
 							});
 						}
 					else {
-						httpReadUrl (blogConfig.urlJson, function (jsontext) {
-							callback (jsontext);
-							});
+						if (blogConfig.urlJson === undefined) { //1/9/20 by DW
+							opml.readOpmlUrl (blogConfig.urlOpml, function (theOutline) {
+								var container = {
+									head: {
+										},
+									body: theOutline
+									};
+								callback (utils.jsonStringify (container));
+								});
+							}
+						else {
+							httpReadUrl (blogConfig.urlJson, function (jsontext) {
+								callback (jsontext);
+								});
+							}
 						}
 					}
 				}
