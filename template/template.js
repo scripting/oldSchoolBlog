@@ -569,7 +569,7 @@ var ctLikesInPage = 0; //11/10/18 by DW
 			currentOldestPageDate = config.oldestDayOnHomePage;
 			}
 		var day = dateYesterday (currentOldestPageDate);
-		var url = "http://rockaway.scripting.com:1400/day?blog=dave&day=" + day.toUTCString ();
+		var url = "http://montana.scripting.com:1400/day?blog=dave&day=" + day.toUTCString ();
 		currentOldestPageDate = day;
 		readHttpFileThruProxy (url, undefined, function (htmltext) {
 			if (htmltext !== undefined) {
@@ -853,8 +853,9 @@ function setupXrefs () {
 				fname = "a" + stringPopExtension (stringLastField (xref, "/")) + ".json";
 				folder = stringPopLastField (xref, "/");
 				}
-			url = replaceAll (folder, "scripting.com/", "scripting.com/items/") + "/" + fname;
+			url = replaceAll (folder, "scripting.com/", "scripting.com/data/items/") + "/" + fname; //2/6/20 by DW
 			
+			console.log ("setupXrefs: url == " + url);
 			
 			initWedge (theListItem, function (flExpand) {
 				if (flExpand) {

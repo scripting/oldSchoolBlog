@@ -1,4 +1,4 @@
-var myVersion = "0.5.53", myProductName = "oldSchool";   
+var myVersion = "0.5.55", myProductName = "oldSchool";   
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -41,6 +41,8 @@ var config = { //defaults
 	debugMessageCallback: undefined, //8/8/17 by DW
 	flXmlRpcPing: false, //11/22/19 by DW
 	urlPingEndpoint: "http://githubstorypage.scripting.com/rpc2", //11/22/19 by DW
+	flSaveRssDebuggingInfo: true, //1/13/20 by DW
+	debugFolder: "data/debug/", //1/13/20 by DW
 	blogs: {
 		}
 	};
@@ -123,6 +125,8 @@ function fsWriteFile (f, s) { //8/8/17 by DW
 			});
 		});
 	}
+
+
 function daysInMonth (theDay) { //goes in utils
 	return (new Date (theDay.getYear (), theDay.getMonth () + 1, 0).getDate ());
 	}
@@ -227,9 +231,40 @@ function publishBlog (jstruct, options, callback) {
 	var blogName = options.blogName; //8/14/17 by DW
 	var blogConfig = config.blogs [blogName];
 	var daysArray = new Array (), now = new Date ();
+	
+	function writeAndMirrorFile (localpath, s3relpath, s, type) { //2/4/20 by DW
+		utils.sureFilePath  (localpath, function () {
+			fs.readFile (localpath, function (err, data) {
+				var flwrite = true;
+				if (!err) {
+					if (data.toString () == s.toString ()) {
+						flwrite = false;
+						}
+					}
+				if (flwrite) {
+					fs.writeFile (localpath, s, function (err) {
+						if (err) {
+							debugMessage ("writeAndMirrorFile: localpath == " + localpath + ", err.message == " + err.message);
+							}
+						});
+					if (blogConfig.flMirrorDataToS3) {
+						var s3path = blogConfig.basePathMirror + s3relpath;
+						console.log ("writeAndMirrorFile: s3path == " + s3path);
+						s3.newObject (s3path, s, type, undefined, function (err, data) {
+							if (err) {
+								debugMessage ("writeAndMirrorFile: s3path == " + s3path + ", err.message == " + err.message);
+								}
+							});
+						}
+					}
+				});
+			});
+		}
+	
+	
 	function savePublishedPage (relpath, pagetext) {
 		var f = config.pagesFolder + blogName + "/" + relpath;
-		fsWriteFile (f, pagetext);
+		writeAndMirrorFile (f, "pages/" + relpath, pagetext, "text/html");
 		}
 	function findPublishedPage (relpath, callback) {
 		var f = config.pagesFolder + blogName + "/" + relpath;
@@ -259,16 +294,20 @@ function publishBlog (jstruct, options, callback) {
 		var relpath = utils.getDatePath (new Date (item.created), true) + getPermalinkString (item.created) + ".json"
 		
 		var f = config.itemsFolder + blogName + "/" + relpath;
-		fsWriteFile (f, utils.jsonStringify (item));
+		writeAndMirrorFile (f, "items/" + relpath, utils.jsonStringify (item), "application/json");
 		saveItemToS3 (relpath, item); //7/12/17 by DW
 		}
 	function saveDay (day) { //6/10/17 by DW
 		var relpath = utils.getDatePath (new Date (day.created), false) + ".json"
 		var f = config.daysFolder + blogName + "/" + relpath;
-		fsWriteFile (f, utils.jsonStringify (day));
+		var jsontext = utils.jsonStringify (day);
+		writeAndMirrorFile (f, "days/" + relpath, jsontext, "application/json");
 		}
 	function glossaryProcess (s) {
 		return (utils.multipleReplaceAll (s, blogConfig.glossary));
+		}
+	function addInlineImageTo (s, urlImage) { //1/13/20 by DW
+		return ("<center><img class=\"imgInline\" src=\"" + urlImage + "\"></center>" + s);
 		}
 	function publishThroughTemplate (relpath, pagetitle, metadata, htmltext, templatetext, addToConfig, callback) {
 		function getSocialMediaLinks () {
@@ -455,7 +494,7 @@ function publishBlog (jstruct, options, callback) {
 		function getRenderedText (item, flTextIsTitle, urlStoryPage) {
 			var s = emojiProcess (glossaryProcess (item.text)), flInlineImage = false;
 			if (item.inlineImage !== undefined) { //1/2/20 by DW
-				s = "<center><img class=\"imgInline\" src=\"" + item.inlineImage + "\"></center>" + s;
+				s = addInlineImageTo (s, item.inlineImage);
 				flInlineImage = true;
 				}
 			switch (item.type) {
@@ -833,9 +872,6 @@ function publishBlog (jstruct, options, callback) {
 					callback ();
 					}
 				});
-			
-			
-			
 			}
 		
 		function processOutline (theOutline) { //8/24/17 by DW
@@ -896,6 +932,9 @@ function publishBlog (jstruct, options, callback) {
 				var item = day.subs [j], obj = new Object ();
 				if (item.subs === undefined) {
 					obj.text = emojiProcess (glossaryProcess (item.text));
+					if (item.inlineImage !== undefined) { //1/13/20 by DW
+						obj.text = "<div class=\"divInlineImage\">" + addInlineImageTo (obj.text, item.inlineImage) + "</div>";
+						}
 					}
 				else {
 					obj.title = item.text;
@@ -920,6 +959,10 @@ function publishBlog (jstruct, options, callback) {
 		pubRss (headElements, rssHistory); 
 		pubJson (headElements, rssHistory); 
 		pubFacebookRss (headElements, rssHistory); //7/4/17 by DW
+		if (config.flSaveRssDebuggingInfo) { //1/13/20 by DW
+			fsWriteFile (config.debugFolder + "headElements.json", utils.jsonStringify (headElements));
+			fsWriteFile (config.debugFolder + "rssHistory.json", utils.jsonStringify (rssHistory));
+			}
 		}
 	function publishHomeJson (callback) { //7/18/17 by DW
 		var path = blogConfig.basePath + config.indexJsonFname;
@@ -1172,7 +1215,7 @@ function init (configParam, callback) {
 											doHttpReturn (503, "text/plain", err.message);
 											}
 										break;
-									case "/day": //10/17/19 by DW
+									case "/day": //10/17/19 by DW -- used for infinite scroll on scripting.com
 										getDayHtml (parsedUrl.query.blog, parsedUrl.query.day, doHttpReturn);
 										break;
 									default: 

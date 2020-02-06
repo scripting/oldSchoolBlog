@@ -1,3 +1,7 @@
+* 2/4/20; 12:10:16 PM by DW
+   * Mirror everything that goes to the data folder to S3
+      * blogConfig.flMirrorDataToS3
+      * blogConfig.basePathDataMirror
 * 1/6/20; 12:02:02 PM by DW
    * when generating urls, add on a parameter with the title of the post, innercased
       * help human beings figure it out
