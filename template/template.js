@@ -1,4 +1,7 @@
 var myVersion = "0.6.16";
+
+const flLikesEnabled = false; //2/7/20 by DW -- I want to reclaim the space, they weren't being used, and the server needs a new interface
+
 var mySnap, flSnapDrawerOpen = false;
 var urlSidebarOpml = "http://scripting.com/misc/menubar.opml";
 var drawerWidth = 300;
@@ -155,14 +158,25 @@ var ctLikesInPage = 0; //11/10/18 by DW
 				}
 			});
 		}
-	function tabClick (tabname) {
-		console.log ("tabClick: tabname == " + tabname);
+	function initTab (tabname) {
 		let theTab = tabs [tabname];
 		if (theTab.click !== undefined) {
 			theTab.click ();
 			}
-		savedState.currentTab = tabname;
-		saveState ();
+		}
+	function tabClick (tabname) {
+		console.log ("tabClick: tabname == " + tabname);
+		var redirectname = tabname;
+		switch (tabname) {
+			case "blog":
+				break;
+			case "linkblog":
+				redirectname = "links";
+				break;
+			case "about":
+				break;
+			}
+		window.location.href = "?tab=" + redirectname;
 		}
 	function startTabsIfHomePage (callback) { 
 		if (config.flHomePage) {
@@ -185,7 +199,7 @@ var ctLikesInPage = 0; //11/10/18 by DW
 				}
 			initBlogTab (function () {
 				initLinkblog (function () {
-					tabClick (savedState.currentTab);
+					initTab (savedState.currentTab);
 					if (callback !== undefined) {
 						callback ();
 						}
@@ -284,6 +298,21 @@ var ctLikesInPage = 0; //11/10/18 by DW
 				}
 			});
 		}
+	function getLikesArray (theArray, callback) { //2/7/20 by DW
+		var params = {
+			jsontext: jsonStringify (theArray)
+			};
+		serverCall ("getlikesarray", params, function (err, jsontext) {
+			if (err) {
+				console.log ("getLikesArray: err == " + jsonStringify (err));
+				callback (err);
+				}
+			else {
+				var jstruct = JSON.parse (jsontext);
+				callback (undefined, jstruct);
+				}
+			});
+		}
 	function viewLikes (idLikes, myUrl, likes) { 
 		function getThumbIcon (thumbDirection, flopen) {
 			var open = "";
@@ -362,35 +391,37 @@ var ctLikesInPage = 0; //11/10/18 by DW
 		return (theText);
 		}
 	function setupLikes () {
-		$(".divTitledItem, .divSingularItem").each (function () {
-			var theText = maxStringLength ($(this).text (), 25);
-			var flLikeSetup = getBoolean ($(this).data ("likesetup"));
-			var attval = $(this).data ("fllikeable"), flLikeable;
-			if (dayGreaterThanOrEqual (config.now, "November 22, 2018")) {
-				flLikeable = true; //default -- 11/22/18 by DW
-				if (attval !== undefined) {
+		if (flLikesEnabled) { //2/7/20 by DW
+			$(".divTitledItem, .divSingularItem").each (function () {
+				var theText = maxStringLength ($(this).text (), 25);
+				var flLikeSetup = getBoolean ($(this).data ("likesetup"));
+				var attval = $(this).data ("fllikeable"), flLikeable;
+				if (dayGreaterThanOrEqual (config.now, "November 22, 2018")) {
+					flLikeable = true; //default -- 11/22/18 by DW
+					if (attval !== undefined) {
+						flLikeable = getBoolean (attval);
+						}
+					}
+				else {
 					flLikeable = getBoolean (attval);
 					}
-				}
-			else {
-				flLikeable = getBoolean (attval);
-				}
-			if ((flLikeable) && (!flLikeSetup)) {
-				var id = "idLike" + ctLikesInPage++;
-				$(this).attr ("data-likesetup", true);
-				$(this).append ("<span id=\"" + id + "\"></span>");
-				
-				var href = getPostPermalink (this); //12/15/18 by DW
-				getLikes (href, function (err, theLikes) {
-					if (err) {
-						console.log ("setupLikes: err.message == " + err.message);
-						}
-					else {
-						viewLikes (id, href, theLikes);
-						}
-					});
-				}
-			});
+				if ((flLikeable) && (!flLikeSetup)) {
+					var id = "idLike" + ctLikesInPage++;
+					$(this).attr ("data-likesetup", true);
+					$(this).append ("<span id=\"" + id + "\"></span>");
+					
+					var href = getPostPermalink (this); //12/15/18 by DW
+					getLikes (href, function (err, theLikes) {
+						if (err) {
+							console.log ("setupLikes: err.message == " + err.message);
+							}
+						else {
+							viewLikes (id, href, theLikes);
+							}
+						});
+					}
+				});
+			}
 		}
 //twitter comments -- 12/14/18 by DW
 	const tweetCommentHashtag = "#scriptingnews";
@@ -903,6 +934,19 @@ function setupXrefs () {
 			}
 		});
 	}
+function setupSpoilers () {
+	$(".spSpoiler").each (function () {
+		var spoilertext = $(this).html ();
+		console.log ("setupSpoilers: spoilertext == " + spoilertext);
+		console.log ("setupSpoilers");
+		$(this).text ("[Spoilers.]");
+		$(this).css ("display", "inline");
+		$(this).mousedown (function () {
+			console.log ("setupSpoilers: spoilertext == " + spoilertext);
+			$(this).text (spoilertext);
+			});
+		});
+	}
 function viewInPopup (obj) {
 	var htmltext = "", indentlevel = 0;
 	function add (s) {
@@ -995,6 +1039,7 @@ function setupJavaScriptFeatures () { //1/15/19 by DW
 	setupExpandableOutline (); //5/15/18 by DW
 	setupTwitterComments (); //12/14/18 by DW
 	setupLikes (); //11/8/18 by DW
+	setupSpoilers (); //3/3/20 by DW
 	try { //9/21/19 by DW
 		if (modalImageViewStartup !== undefined) { //6/25/18 by DW
 			modalImageViewStartup (); 
@@ -1019,6 +1064,7 @@ function startup () {
 	twGetOauthParams (); //11/10/18 by DW
 	if (localStorage.savedState !== undefined) {
 		savedState = JSON.parse (localStorage.savedState);
+		savedState.currentTab = "blog"; //4/6/20 AM by DW
 		}
 	//get tab param, if present, redirect to appropriate page
 		var theParam = getURLParameter ("tab");
@@ -1051,6 +1097,9 @@ function startup () {
 				window.location.href = config.baseUrl + newloc;
 				}
 			}
+	if (savedState.currentTab == "blog") { //4/7/20 by DW -- More button only visible for the blog tab
+		$("#idMoreButton").css ("display", "block"); 
+		}
 	initSnap (urlSidebarOpml, "idSidebarOutline", "Scripting News menu", false, function () {
 		if ($("#idAboutOutline").length !== 0) { //it's the about page
 			viewAboutPage ();

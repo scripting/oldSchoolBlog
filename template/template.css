@@ -565,6 +565,12 @@ body {
 	.imgInline {
 		margin-bottom: 10px;
 		}
+/*  3/3/20 PM by DW */
+	.spSpoiler {
+		display: none;
+		cursor: pointer;
+		color: green;
+		}
 
 /* styles for phone */
 	@media only screen 

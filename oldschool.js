@@ -1,4 +1,4 @@
-var myVersion = "0.5.55", myProductName = "oldSchool";   
+var myVersion = "0.5.57", myProductName = "oldSchool";   
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -295,7 +295,6 @@ function publishBlog (jstruct, options, callback) {
 		
 		var f = config.itemsFolder + blogName + "/" + relpath;
 		writeAndMirrorFile (f, "items/" + relpath, utils.jsonStringify (item), "application/json");
-		saveItemToS3 (relpath, item); //7/12/17 by DW
 		}
 	function saveDay (day) { //6/10/17 by DW
 		var relpath = utils.getDatePath (new Date (day.created), false) + ".json"
@@ -567,6 +566,11 @@ function publishBlog (jstruct, options, callback) {
 			else {
 				if (utils.getBoolean (parent.flBulletedSubs)) { //5/15/18 by DW
 					ulAddedClass = " ulBulletedSubs";
+					}
+				else {
+					if (utils.getBoolean (parent.flCodeSubs)) { //4/24/20 by DW
+						ulAddedClass = " ulCodeSubs";
+						}
 					}
 				}
 			if (utils.getBoolean (parent.collapse)) { //5/15/18 by DW
