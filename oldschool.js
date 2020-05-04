@@ -1,4 +1,4 @@
-var myVersion = "0.5.57", myProductName = "oldSchool";   
+var myVersion = "0.5.58", myProductName = "oldSchool";   
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -19,7 +19,7 @@ const opml = require ("daveopml");
 const xmlrpc = require ("davexmlrpc"); //10/14/19 by DW
 
 var baseOutputPath = "/scripting.com/reboot/test/v2/", baseOutputUrl = "http:/" + baseOutputPath;
-var urlDefaultTemplate = "http://fargo.io/code/shared/oldschool/daytemplate.html"
+var urlDefaultTemplate = "http://scripting.com/code/oldschool/daytemplate.html"
 var dayTemplateText = undefined;
 var flBackgroundBuilds = false;
 var pingLog = [], pathPingLog = "/scripting.com/misc/pingLog.json", flPingLogChanged = false, flPingLogEnabled = false;
@@ -357,7 +357,7 @@ function publishBlog (jstruct, options, callback) {
 			
 			myConfig.urlCalendar = blogConfig.baseUrl + config.calendarFname;
 			myConfig.now = new Date (); //9/28/17 by DW
-			
+			myConfig.metadata = metadata; //5/4/20 by DW
 			
 			return (utils.jsonStringify (myConfig));
 			}
