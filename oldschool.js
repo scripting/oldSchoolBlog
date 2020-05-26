@@ -1,4 +1,4 @@
-var myVersion = "0.5.58", myProductName = "oldSchool";   
+var myVersion = "0.5.59", myProductName = "oldSchool";   
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -526,7 +526,10 @@ function publishBlog (jstruct, options, callback) {
 			
 			var imgHtml = "";
 			if (item.image !== undefined) {
-				imgHtml = "<img src=\"" + item.image + "\" border=\"0\" style=\"float: right; padding-left: 25px; padding-bottom: 10px; padding-top: 10px; padding-right: 15px;\">";
+				imgHtml = "<img class=\"imgRightMargin\" src=\"" + item.image + "\" border=\"0\" style=\"float: right; padding-left: 25px; padding-bottom: 10px; padding-top: 10px; padding-right: 15px;\">";
+				if (item.imageLink !== undefined) { //5/26/20 by DW
+					imgHtml = "<a class=\"anchorRightMargin\" href=\"" + item.imageLink + "\">" + imgHtml + "</a>";
+					}
 				}
 			
 			if (flTextIsTitle) {

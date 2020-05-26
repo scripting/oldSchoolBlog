@@ -1,3 +1,5 @@
+* 5/26/20; 4:27:39 PM by DW
+   * Add support for <a href="https://github.com/scripting/oldSchoolBlog/blob/master/worknotes/atts.md#imageLink">imageLink</a> attribute. 
 * 2/4/20; 12:10:16 PM by DW
    * Mirror everything that goes to the data folder to S3
       * blogConfig.flMirrorDataToS3

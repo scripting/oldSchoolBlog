@@ -6,6 +6,10 @@ These are the attributes you can put on an oldschool outline. It's a good thing 
 
 The URL of an image that appears to the right of the text of the post it's attached to.
 
+### imageLink
+
+If you have an image attribute, you can cause it to link to another place by adding an imageLink attribute whose value is the web address of the place
+
 ### urlvideo
 
 URL of a YouTube video. If present there's a wedge to the left of the headline, click it to reveal the video below the post. You can get the URL by viewing the video in YouTube, click on Share and copy the URL.
