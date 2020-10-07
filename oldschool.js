@@ -1,4 +1,4 @@
-var myVersion = "0.5.59", myProductName = "oldSchool";   
+var myVersion = "0.6.1", myProductName = "oldSchool";   
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -17,6 +17,7 @@ const fs = require ("fs");
 const querystring = require ("querystring");
 const opml = require ("daveopml");
 const xmlrpc = require ("davexmlrpc"); //10/14/19 by DW
+const macroprocess = require ("macroprocess"); //9/2/20 by DW
 
 var baseOutputPath = "/scripting.com/reboot/test/v2/", baseOutputUrl = "http:/" + baseOutputPath;
 var urlDefaultTemplate = "http://scripting.com/code/oldschool/daytemplate.html"
@@ -45,6 +46,8 @@ var config = { //defaults
 	debugFolder: "data/debug/", //1/13/20 by DW
 	blogs: {
 		}
+	};
+var dataForBlogs = { //10/6/20 by DW -- one for each blog
 	};
 
 function pingForStoryPage () { //10/14/19 by DW
@@ -125,8 +128,6 @@ function fsWriteFile (f, s) { //8/8/17 by DW
 			});
 		});
 	}
-
-
 function daysInMonth (theDay) { //goes in utils
 	return (new Date (theDay.getYear (), theDay.getMonth () + 1, 0).getDate ());
 	}
@@ -146,34 +147,34 @@ function markdownProcess (s) {
 		};
 	return (marked (s, options));
 	}
-function addDayToCalendar (blogConfig, theDay, url) {
+function addDayToCalendar (blogData, theDay, url) {
 	var d = new Date (theDay);
-	var year = blogConfig.calendar [d.getFullYear ()];
+	var year = blogData.calendar [d.getFullYear ()];
 	if (year === undefined) {
-		blogConfig.calendar [d.getFullYear ()] = new Object ();
-		year = blogConfig.calendar [d.getFullYear ()];
-		blogConfig.flCalendarChanged = true;
+		blogData.calendar [d.getFullYear ()] = new Object ();
+		year = blogData.calendar [d.getFullYear ()];
+		blogData.flCalendarChanged = true;
 		}
 	var month = year [d.getMonth ()];
 	if (month === undefined) {
 		year [d.getMonth ()] = new Object ();
 		month = year [d.getMonth ()];
-		blogConfig.flCalendarChanged = true;
+		blogData.flCalendarChanged = true;
 		}
 	var day = month [d.getDate ()];
 	if (day === undefined) {
 		month [d.getDate ()] = new Object ();
 		day = month [d.getDate ()];
-		blogConfig.flCalendarChanged = true;
+		blogData.flCalendarChanged = true;
 		}
 	if (day.url != url) {
 		day.url = url;
-		blogConfig.flCalendarChanged = true;
+		blogData.flCalendarChanged = true;
 		}
 	}
-function publishCalendarJson (blogConfig, callback) {
+function publishCalendarJson (blogConfig, blogData, callback) {
 	var path = blogConfig.basePath + config.calendarFname;
-	publishFile (path, utils.jsonStringify (blogConfig.calendar), "application/json", "public-read", function (err, data) {
+	publishFile (path, utils.jsonStringify (blogData.calendar), "application/json", "public-read", function (err, data) {
 		if (err) {
 			debugMessage ("publishCalendarJson: path == " + path + ", err.message == " + err.message);
 			}
@@ -185,21 +186,21 @@ function publishCalendarJson (blogConfig, callback) {
 			}
 		});
 	}
-function readCalendarJson (blogConfig, callback) {
+function readCalendarJson (blogConfig, blogData, callback) {
 	var url = blogConfig.baseUrl + config.calendarFname;
-	blogConfig.flCalendarChanged = false; //6/12/17 by DW
+	blogData.flCalendarChanged = false; //6/12/17 by DW
 	httpReadUrl (url, function (jsontext) {
 		if (jsontext !== undefined) {
 			try {
-				blogConfig.calendar = JSON.parse (jsontext);
+				blogData.calendar = JSON.parse (jsontext);
 				}
 			catch (err) {
 				debugMessage ("readCalendarJson: err.message == " + err.message);
-				blogConfig.calendar = new Object ();
+				blogData.calendar = new Object ();
 				}
 			}
 		else {
-			blogConfig.calendar = new Object ();
+			blogData.calendar = new Object ();
 			}
 		if (callback !== undefined) {
 			callback (jsontext);
@@ -226,10 +227,10 @@ function writePingLog (callback) {
 			}
 		});
 	}
-
 function publishBlog (jstruct, options, callback) {
 	var blogName = options.blogName; //8/14/17 by DW
 	var blogConfig = config.blogs [blogName];
+	var blogData = dataForBlogs [blogName]; //10/6/20 by DW
 	var daysArray = new Array (), now = new Date ();
 	
 	function writeAndMirrorFile (localpath, s3relpath, s, type) { //2/4/20 by DW
@@ -304,6 +305,26 @@ function publishBlog (jstruct, options, callback) {
 		}
 	function glossaryProcess (s) {
 		return (utils.multipleReplaceAll (s, blogConfig.glossary));
+		}
+	function processText (s) { //9/2/20 by DW -- all text processing code in one call
+		const macroOptions = {
+			startChars: "[%",
+			endChars: "%]",
+			delimiter: ":",
+			handlers: {
+				search: function (macrotext) {
+					var url, link;
+					macrotext = utils.trimWhitespace (macrotext);
+					url = "https://duckduckgo.com/?q=site%3Ascripting.com+%22" + macrotext + "%22&t=h_&ia=web";
+					link = "<a href=\"" + url + "\">" + macrotext + "</a>";
+					return (link);
+					}
+				}
+			};
+		s = glossaryProcess (s);
+		s = emojiProcess (s);
+		s = macroprocess (s, macroOptions);
+		return (s);
 		}
 	function addInlineImageTo (s, urlImage) { //1/13/20 by DW
 		return ("<center><img class=\"imgInline\" src=\"" + urlImage + "\"></center>" + s);
@@ -491,7 +512,7 @@ function publishBlog (jstruct, options, callback) {
 			htmltext += utils.filledString ("\t", indentlevel) + s + "\n";
 			}
 		function getRenderedText (item, flTextIsTitle, urlStoryPage) {
-			var s = emojiProcess (glossaryProcess (item.text)), flInlineImage = false;
+			var s = processText (item.text), flInlineImage = false;
 			if (item.inlineImage !== undefined) { //1/2/20 by DW
 				s = addInlineImageTo (s, item.inlineImage);
 				flInlineImage = true;
@@ -661,7 +682,7 @@ function publishBlog (jstruct, options, callback) {
 				});
 			}
 		
-		addDayToCalendar (blogConfig, day.created, urlpage); //5/13/17 by DW
+		addDayToCalendar (blogData, day.created, urlpage); //5/13/17 by DW
 		
 		add ("<div class=\"divDayTitle\"><a href=\"" + urlpage + "\">" + daystring + "</a></div>");
 		
@@ -685,7 +706,7 @@ function publishBlog (jstruct, options, callback) {
 		
 		day.htmltext = htmltext; //so the home page and month archive can access it
 		
-		blogConfig.htmlArchive [daypath] = { //save the text in blogConfig.htmlArchive -- 6/10/17 by DW
+		blogData.htmlArchive [daypath] = { //save the text in blogData.htmlArchive -- 6/10/17 by DW
 			htmltext: htmltext
 			}
 		
@@ -714,7 +735,7 @@ function publishBlog (jstruct, options, callback) {
 		var theDay = new Date ();
 		newestDayOnHomePage = theDay;
 		for (var i = 0; i < ctDays; i++) {
-			var dayInArchive = blogConfig.htmlArchive [utils.getDatePath (theDay, false)];
+			var dayInArchive = blogData.htmlArchive [utils.getDatePath (theDay, false)];
 			if (dayInArchive !== undefined) {
 				htmltext += "<div class=\"divArchivePageDay\">" + dayInArchive.htmltext + "</div>";
 				}
@@ -763,7 +784,7 @@ function publishBlog (jstruct, options, callback) {
 			var htmltext = "";
 			var ctDays = daysInMonth (now), year = now.getFullYear (), month = now.getMonth ();
 			for (var i = ctDays; i > 0; i--) {
-				var dayInArchive = blogConfig.htmlArchive [utils.getDatePath (new Date (year, month, i), false)];
+				var dayInArchive = blogData.htmlArchive [utils.getDatePath (new Date (year, month, i), false)];
 				if (dayInArchive !== undefined) {
 					htmltext += "<div class=\"divArchivePageDay\">" + dayInArchive.htmltext + "</div>";
 					}
@@ -785,7 +806,7 @@ function publishBlog (jstruct, options, callback) {
 				}
 			function visit (parent) {
 				for (var i = 0; i < parent.subs.length; i++) {
-					var item = parent.subs [i], text = emojiProcess (glossaryProcess (item.text));
+					var item = parent.subs [i], text = processText (item.text);
 					
 					if (indentlevel == 0) {
 						add ("<p>" + text + "</p>");
@@ -885,7 +906,7 @@ function publishBlog (jstruct, options, callback) {
 			var theCopy = JSON.parse (JSON.stringify (theOutline));
 			function visit (parent) {
 				if (parent.text !== undefined) {
-					parent.text = emojiProcess (glossaryProcess (parent.text));
+					parent.text = processText (parent.text);
 					}
 				if (parent.subs !== undefined) {
 					for (var i = 0; i < parent.subs.length; i++) {
@@ -938,7 +959,7 @@ function publishBlog (jstruct, options, callback) {
 			for (var j = 0; j < day.subs.length; j++) {
 				var item = day.subs [j], obj = new Object ();
 				if (item.subs === undefined) {
-					obj.text = emojiProcess (glossaryProcess (item.text));
+					obj.text = processText (item.text);
 					if (item.inlineImage !== undefined) { //1/13/20 by DW
 						obj.text = "<div class=\"divInlineImage\">" + addInlineImageTo (obj.text, item.inlineImage) + "</div>";
 						}
@@ -1082,11 +1103,11 @@ function publishBlog (jstruct, options, callback) {
 		blogConfig.ownerGithubAccount = jstruct.head.ownerGithubAccount; //5/26/17 by DW
 		blogConfig.ownerLinkedinAccount = jstruct.head.ownerLinkedinAccount; //5/26/17 by DW
 		
-		if (blogConfig.calendar === undefined) { //1/9/20 by DW
-			blogConfig.calendar = new Array ();
+		if (blogData.calendar === undefined) { //1/9/20 by DW
+			blogData.calendar = new Object ();
 			}
-		if (blogConfig.htmlArchive === undefined) { //1/9/20 by DW
-			blogConfig.htmlArchive = new Object ();
+		if (blogData.htmlArchive === undefined) { //1/9/20 by DW
+			blogData.htmlArchive = new Object ();
 			}
 		
 		getBlogGlossary (function () {
@@ -1108,7 +1129,6 @@ function publishBlog (jstruct, options, callback) {
 			});
 		}
 	}
-
 function readConfig (callback) { 
 	fs.readFile (fnameConfig, function (err, data) {
 		if (!err) {
@@ -1124,6 +1144,16 @@ function readConfig (callback) {
 			}
 		if (callback !== undefined) {
 			callback ();
+			}
+		});
+	}
+function writeConfig () { //10/6/20 by DW -- for debugging
+	fs.writeFile ("configDebug.json", utils.jsonStringify (config), function (err) {
+		if (err) {
+			console.log ("writeConfig: err.message == " + err.message);
+			}
+		else {
+			console.log ("writeConfig: configDebug.json written.");
 			}
 		});
 	}
@@ -1277,11 +1307,17 @@ function init (configParam, callback) {
 				}
 			function initBlog (blogName) {
 				var blogConfig = config.blogs [x];
+				dataForBlogs [x] = {
+					htmlArchive: new Object (),
+					calendar: new Object (),
+					flCalendarChanged: false
+					};
+				var blogData = dataForBlogs [x];
 				function getBlogHtmlArchive (callback) {
 					var pagesfolder = config.pagesFolder + blogName + "/";
 					utils.sureFilePath  (pagesfolder + "x", function () {
 						var yearlist = fs.readdirSync (pagesfolder);
-						blogConfig.htmlArchive = new Object ();
+						blogData.htmlArchive = new Object ();
 						for (var i = 0; i < yearlist.length; i++) {
 							var yearname = yearlist [i], yearfolder = pagesfolder + yearname;
 							if (isDirectory (yearfolder)) {
@@ -1296,7 +1332,7 @@ function init (configParam, callback) {
 												var f = monthfolder + "/" + dayname;
 												var objname = yearname + "/" + monthname + "/" + dayname;
 												objname = utils.stringMid (objname, 1, objname.length - 5); //pop off .html at end
-												blogConfig.htmlArchive [objname] = {
+												blogData.htmlArchive [objname] = {
 													htmltext: fs.readFileSync (f).toString ()
 													}
 												}
@@ -1310,7 +1346,7 @@ function init (configParam, callback) {
 							}
 						});
 					}
-				readCalendarJson (blogConfig, function () {
+				readCalendarJson (blogConfig, blogData, function () {
 					getBlogHtmlArchive (function () {
 						});
 					});
@@ -1353,9 +1389,10 @@ function init (configParam, callback) {
 					}
 				for (var x in config.blogs) {
 					var blogConfig = config.blogs [x];
-					if (blogConfig.flCalendarChanged) {
-						publishCalendarJson (blogConfig);
-						blogConfig.flCalendarChanged = false;
+					var blogData = dataForBlogs [x];
+					if (blogData.flCalendarChanged) {
+						publishCalendarJson (blogConfig, blogData);
+						blogData.flCalendarChanged = false;
 						}
 					}
 				if (flPingLogEnabled && flPingLogChanged) {
