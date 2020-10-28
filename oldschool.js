@@ -1,4 +1,4 @@
-var myVersion = "0.6.1", myProductName = "oldSchool";   
+var myVersion = "0.6.3", myProductName = "oldSchool";   
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -25,6 +25,7 @@ var dayTemplateText = undefined;
 var flBackgroundBuilds = false;
 var pingLog = [], pathPingLog = "/scripting.com/misc/pingLog.json", flPingLogChanged = false, flPingLogEnabled = false;
 var fnameConfig = "config.json";
+var lastConfigJsontext = undefined; //10/8/20 by DW -- so we can put out a message if it changed
 
 var config = { //defaults
 	port: process.env.PORT || 1400, //11/22/19 by DW
@@ -232,7 +233,6 @@ function publishBlog (jstruct, options, callback) {
 	var blogConfig = config.blogs [blogName];
 	var blogData = dataForBlogs [blogName]; //10/6/20 by DW
 	var daysArray = new Array (), now = new Date ();
-	
 	function writeAndMirrorFile (localpath, s3relpath, s, type) { //2/4/20 by DW
 		utils.sureFilePath  (localpath, function () {
 			fs.readFile (localpath, function (err, data) {
@@ -261,8 +261,6 @@ function publishBlog (jstruct, options, callback) {
 				});
 			});
 		}
-	
-	
 	function savePublishedPage (relpath, pagetext) {
 		var f = config.pagesFolder + blogName + "/" + relpath;
 		writeAndMirrorFile (f, "pages/" + relpath, pagetext, "text/html");
@@ -328,6 +326,18 @@ function publishBlog (jstruct, options, callback) {
 		}
 	function addInlineImageTo (s, urlImage) { //1/13/20 by DW
 		return ("<center><img class=\"imgInline\" src=\"" + urlImage + "\"></center>" + s);
+		}
+	function addInlineVideoTo (s, urlVideo) { //10/11/20 by DW
+		function fixYoutubeUrl (url) { //cribbed from oldSchoolTemplate
+			const prefix = "https://www.youtube.com/watch?v=";
+			if (utils.beginsWith (url, prefix)) {
+				url = "https://www.youtube.com/embed/" + utils.stringDelete (url, 1, prefix.length);
+				}
+			return (url);
+			}
+		var url = fixYoutubeUrl (urlVideo);
+		var videotext = "<iframe width=\"560\" height=\"315\" src=\"" + url + "\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\" allowfullscreen></iframe>";
+		return ("<center>" + videotext + "</center>" + s);
 		}
 	function publishThroughTemplate (relpath, pagetitle, metadata, htmltext, templatetext, addToConfig, callback) {
 		function getSocialMediaLinks () {
@@ -516,6 +526,12 @@ function publishBlog (jstruct, options, callback) {
 			if (item.inlineImage !== undefined) { //1/2/20 by DW
 				s = addInlineImageTo (s, item.inlineImage);
 				flInlineImage = true;
+				}
+			else {
+				if (item.inlineVideo !== undefined) { //10/11/20 by DW
+					s = addInlineVideoTo (s, item.inlineVideo);
+					flInlineImage = true;
+					}
 				}
 			switch (item.type) {
 				case "link":
@@ -1130,12 +1146,17 @@ function publishBlog (jstruct, options, callback) {
 		}
 	}
 function readConfig (callback) { 
-	fs.readFile (fnameConfig, function (err, data) {
+	fs.readFile (fnameConfig, function (err, jsontext) {
 		if (!err) {
 			try {
-				var jstruct = JSON.parse (data.toString ());
-				for (var x in jstruct) {
-					config [x] = jstruct [x];
+				jsontext = jsontext.toString ();
+				if (jsontext != lastConfigJsontext) {
+					var jstruct = JSON.parse (jsontext);
+					for (var x in jstruct) {
+						config [x] = jstruct [x];
+						}
+					console.log ("readConfig: updated " + fnameConfig);
+					lastConfigJsontext = jsontext;
 					}
 				}
 			catch (err) {
@@ -1314,7 +1335,7 @@ function init (configParam, callback) {
 					};
 				var blogData = dataForBlogs [x];
 				function getBlogHtmlArchive (callback) {
-					var pagesfolder = config.pagesFolder + blogName + "/";
+					var pagesfolder = config.pagesFolder + blogName + "/", whenstart = new Date ();
 					utils.sureFilePath  (pagesfolder + "x", function () {
 						var yearlist = fs.readdirSync (pagesfolder);
 						blogData.htmlArchive = new Object ();
@@ -1341,6 +1362,7 @@ function init (configParam, callback) {
 									}
 								}
 							}
+						console.log ("getBlogHtmlArchive:  html archive for blog " + blogName + " took " + utils.secondsSince (whenstart) + " seconds to load.");
 						if (callback !== undefined) {
 							callback ();
 							}
@@ -1360,6 +1382,7 @@ function init (configParam, callback) {
 				if (now.getMinutes () == 0) { //1/6/20 by DW
 					debugMessage ("\n" + now.toLocaleTimeString () + ": " + myProductName + " v" + myVersion + portpart);
 					}
+				readConfig (); //10/8/20 by DW
 				}
 			function everySecond () {
 				if (flBackgroundBuilds) {

@@ -1,7 +1,7 @@
 * 10/6/20; 10:55:00 AM by DW
    * Previous versions attached data to the <i>config</i> structure, which made it impossible to read the structure periodically without causing havoc. This was a mistake. 
    * Now there is a new top level struct called <i>dataForBlogs,</i> with one sub-struct for each blog it's managing. Under each blog are several items including htmlArchive and calendar. They are recreated every time oldSchool starts up. 
-   * Also includes a macroprocessor with one verb: search. See <i>processText</i> in the source for an idea of how it works. 
+   * Also includes a <a href="http://scripting.com/2020/09/02/154724.html?title=macrosInOldSchool">macroprocessor</a> with one verb: search. See <i>processText</i> in the source for an idea of how it works. 
 * 5/26/20; 4:27:39 PM by DW
    * Add support for <a href="https://github.com/scripting/oldSchoolBlog/blob/master/worknotes/atts.md#imageLink">imageLink</a> attribute. 
 * 2/4/20; 12:10:16 PM by DW
