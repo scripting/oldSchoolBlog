@@ -1,4 +1,4 @@
-var myVersion = "0.6.3", myProductName = "oldSchool";   
+var myVersion = "0.6.4", myProductName = "oldSchool";   
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -389,6 +389,7 @@ function publishBlog (jstruct, options, callback) {
 			myConfig.urlCalendar = blogConfig.baseUrl + config.calendarFname;
 			myConfig.now = new Date (); //9/28/17 by DW
 			myConfig.metadata = metadata; //5/4/20 by DW
+			myConfig.generator = myProductName + " v" + myVersion; //11/4/20 by DW -- write over any generator provided in blogConfig
 			
 			return (utils.jsonStringify (myConfig));
 			}
@@ -482,6 +483,7 @@ function publishBlog (jstruct, options, callback) {
 			socialMediaLinks: getSocialMediaLinks (),
 			rssLink: getRssLink (),
 			now: dateFormat (now, "dddd mmmm d, yyyy; h:MM TT Z"),
+			generator: myProductName + " v" + myVersion, //11/4/20 by DW
 			configJson: getConfigJson (),
 			opmlHead: getOpmlHeadInJson (),
 			};

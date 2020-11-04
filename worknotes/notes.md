@@ -1,3 +1,7 @@
+* 11/4/20; 12:11:23 PM by DW
+   * We now correctly set the value of generator in two places:
+      * 1. In the config struct available as a macro configJson. It used to copy the value from blogConfig, if it was available, and in the examples I've provided up till now it was hard-coded at a very old value. We now write over this value with the correct product name and version of the version of Old School that last built the page. 
+      * 2. As a value in the pagetable that can be substituted for [%generator%] in a template. 
 * 10/6/20; 10:55:00 AM by DW
    * Previous versions attached data to the <i>config</i> structure, which made it impossible to read the structure periodically without causing havoc. This was a mistake. 
    * Now there is a new top level struct called <i>dataForBlogs,</i> with one sub-struct for each blog it's managing. Under each blog are several items including htmlArchive and calendar. They are recreated every time oldSchool starts up. 
