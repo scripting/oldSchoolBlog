@@ -1,3 +1,7 @@
+* 11/5/20; 12:35:26 PM by DW
+   * Fixed bug where random top-level headline that's not part of the calendar structure would cause Old School to fail to process the blog.
+   * Fixed bug where an empty day would cause a similar failure.
+   * Don't include commented items at all levels. If you want a day to not appear, even if it has zero items, just comment out the node that represents the day.
 * 11/4/20; 12:11:23 PM by DW
    * We now correctly set the value of generator in two places:
       * In the config struct available as a macro [%configJson%]. It used to copy the value from blogConfig, if it was available, and in the examples I've provided up till now it was hard-coded at a very old value. We now write over this value with the correct product name and version of the version of Old School that last built the page. 
