@@ -1,4 +1,4 @@
-var myVersion = "0.6.4", myProductName = "oldSchool";   
+var myVersion = "0.6.5", myProductName = "oldSchool";   
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -227,6 +227,12 @@ function writePingLog (callback) {
 			callback ();
 			}
 		});
+	}
+function notComment (item) { //11/5/20 by DW
+	return (!utils.getBoolean (item.isComment));
+	}
+function isComment (item) { //11/5/20 by DW
+	return (utils.getBoolean (item.isComment));
 	}
 function publishBlog (jstruct, options, callback) {
 	var blogName = options.blogName; //8/14/17 by DW
@@ -515,224 +521,236 @@ function publishBlog (jstruct, options, callback) {
 			});
 		}
 	function publishDay (day, blogConfig, callback) {
-		var htmltext = "", indentlevel = 0, daypath = utils.getDatePath (new Date (day.created), false), relpath = daypath + ".html", path = blogConfig.basePath + relpath;
-		var urlpage = blogConfig.baseUrl + relpath;
-		var daystring = dateFormat (day.created, "dddd, mmmm d, yyyy"); //9/11/17 by DW
-		var pagetitle = blogConfig.title + ": " + daystring;
-		
-		function add (s) {
-			htmltext += utils.filledString ("\t", indentlevel) + s + "\n";
-			}
-		function getRenderedText (item, flTextIsTitle, urlStoryPage) {
-			var s = processText (item.text), flInlineImage = false;
-			if (item.inlineImage !== undefined) { //1/2/20 by DW
-				s = addInlineImageTo (s, item.inlineImage);
-				flInlineImage = true;
-				}
-			else {
-				if (item.inlineVideo !== undefined) { //10/11/20 by DW
-					s = addInlineVideoTo (s, item.inlineVideo);
-					flInlineImage = true;
-					}
-				}
-			switch (item.type) {
-				case "link":
-					var parsedUrl = urlpack.parse (item.url, true), host = parsedUrl.host;
-					if (utils.beginsWith (host, "www.")) {
-						host = utils.stringDelete (host, 1, 4);
-						}
-					s += "<span class=\"spLink\"><a href=\"" + item.url + "\" target=\"_blank\">" + host + "</a></span>";
-					break;
-				case "markdown": //5/26/17 by DW
-					s = "<span class=\"spRenderedMarkdown\">" + markdownProcess (s) + "</span>";
-					break;
-				}
-			
-			var ourLink = getPermalinkString (item.created); //7/9/17 by DW
-			
-			if (urlStoryPage !== undefined) { //12/30/17 by DW
-				item.permalink = urlStoryPage + "#" + ourLink;
-				}
-			else {
-				if (item.subs !== undefined) { //12/29/17 by DW
-					item.permalink = blogConfig.baseUrl + utils.getDatePath (new Date (day.created), true) + utils.stringDelete (ourLink, 1, 1) + ".html";
-					item.permalink += "?title=" + utils.innerCaseName (item.text); //1/7/20 by DW
-					}
-				else {
-					item.permalink = urlpage + "#" + ourLink;
-					}
-				}
-			
-			var imgHtml = "";
-			if (item.image !== undefined) {
-				imgHtml = "<img class=\"imgRightMargin\" src=\"" + item.image + "\" border=\"0\" style=\"float: right; padding-left: 25px; padding-bottom: 10px; padding-top: 10px; padding-right: 15px;\">";
-				if (item.imageLink !== undefined) { //5/26/20 by DW
-					imgHtml = "<a class=\"anchorRightMargin\" href=\"" + item.imageLink + "\">" + imgHtml + "</a>";
-					}
-				}
-			
-			if (flTextIsTitle) {
-				s = "<a href=\"" + item.permalink + "\"><span class=\"spTitleLink\">" + s + "</a></a>";
-				}
-			
-			var title = "Direct link to this item.";
-			s = "<a name=\"" + ourLink + "\"></a>" + imgHtml + s + "<span class=\"spPermaLink\"><a href=\"" + item.permalink + "\" title=\"" + title + "\">#</a></span>";
-			
-			if (flInlineImage) { //1/3/20 by DW
-				s = "<div class=\"divInlineImage\">" + s + "</div>";
-				}
-			
-			return (s);
-			}
-		function getDataAtts (item) { //7/12/17 by DW
-			var atts = "";
-			for (var x in item) {
-				switch (x) {
-					case "text": case "created": case "permalink": case "subs": //5/16/18 by DW -- added subs
-						break;
-					default:
-						atts += " data-" + x + "=\"" + item [x] + "\"";
-						break;
-					}
-				}
-			return (atts);
-			}
-		function getItemSubs (parent, ulLevel, urlStoryPage) {
-			var htmltext = "", indentlevel = 0, ulAddedClass = "", ulCollapsedClass = "";
-			function add (s) {
-				htmltext += utils.filledString ("\t", indentlevel) + s + "\n";
-				}
-			if (utils.getBoolean (parent.flNumberedSubs)) { //6/15/17 by DW
-				ulAddedClass = " ulNumberedSubs";
-				}
-			else {
-				if (utils.getBoolean (parent.flBulletedSubs)) { //5/15/18 by DW
-					ulAddedClass = " ulBulletedSubs";
-					}
-				else {
-					if (utils.getBoolean (parent.flCodeSubs)) { //4/24/20 by DW
-						ulAddedClass = " ulCodeSubs";
-						}
-					}
-				}
-			if (utils.getBoolean (parent.collapse)) { //5/15/18 by DW
-				ulCollapsedClass = " ulCollapsed";
-				}
-			add ("<ul class=\"ulLevel" + ulLevel + ulAddedClass + ulCollapsedClass + "\">"); indentlevel++;
-			for (var i = 0; i < parent.subs.length; i++) {
-				var item = parent.subs [i];
-				add ("<li" + getDataAtts (item) + ">" + getRenderedText (item, undefined, urlStoryPage) + "</li>");
-				if (item.subs !== undefined) {
-					add (getItemSubs (item, ulLevel + 1, urlStoryPage));
-					}
-				}
-			add ("</ul>"); indentlevel--;
-			return (htmltext);
-			}
-		
-		function getItemSubsMarkdown (storystruct) { //12/22/19 by DW
-			var markdowntext = "", indentlevel = 0;
-			function add (s) {
-				markdowntext += utils.filledString ("\t", indentlevel) + s + "\n";
-				}
-			function getItemText (item) {
-				var img = "";
-				if (item.image !== undefined) {
-					img = "<img src=\"" + item.image + "\" border=\"0\" align=\"right\">";
-					}
-				return (img + item.text);
-				}
-			if (storystruct.subs === undefined) { //it's an untitled story
-				add (getItemText (storystruct));
-				console.log (markdowntext);
-				}
-			else { //it's a titled story
-				add ("# " + storystruct.text);
-				storystruct.subs.forEach (function (sub, ix) {
-					if (sub.subs !== undefined) {
-						var flNumberedSubs = utils.getBoolean (sub.flNumberedSubs);
-						var flBulletedSubs = utils.getBoolean (sub.flBulletedSubs);
-						add (getItemText (sub));
-						sub.subs.forEach (function (listitem, ixitem) {
-							if (flNumberedSubs) {
-								add ((ixitem + 1) + ". " + getItemText (listitem));
-								}
-							else {
-								add ("* " + getItemText (listitem));
-								}
-							});
-						add ("");
-						}
-					else {
-						add (getItemText (sub));
-						add ("");
-						}
-					});
-				}
-			return (markdowntext);
-			}
-		
-		function buildStoryPage (item, itemsubtext, itemsubmarkdown, callback) { //12/28/17 by DW
-			var daypath = utils.getDatePath (new Date (item.created), true);
-			var relpath = daypath + utils.stringDelete (getPermalinkString (item.created), 1, 1) + ".html";
-			var pagetitle = blogConfig.title + ": " + item.text;
-			var metadata = {
-				title: item.text,
-				description: item.description,
-				image: item.metaImage,
-				body: itemsubmarkdown //12/22/19 by DW
-				};
-			
-			function formatTimeLine (when) { //2/11/18 by DW
-				return (dateFormat (when, "dddd mmmm d, yyyy; h:MM TT Z"));
-				}
-			
-			var titleline = "<div class=\"divStoryPageTitle\">" + getRenderedText (item, true) + "</div>";
-			var posttimeline = "<div class=\"divStoryPagePostTime\">" + formatTimeLine (item.created) + "</div>";
-			var htmltext = "<div class=\"divTitledItem\">" + posttimeline + titleline + itemsubtext + "</div>";
-			
-			
-			publishThroughTemplate (relpath, pagetitle, metadata, htmltext, undefined, undefined, function () {
-				if (callback !== undefined) {
-					callback ();
-					}
-				pingForStoryPage (); //10/14/19 by DW
-				});
-			}
-		
-		addDayToCalendar (blogData, day.created, urlpage); //5/13/17 by DW
-		
-		add ("<div class=\"divDayTitle\"><a href=\"" + urlpage + "\">" + daystring + "</a></div>");
-		
-		for (var i = 0; i < day.subs.length; i++) { //loop over all top level subs
-			var item = day.subs [i];
-			saveItem (item); //6/4/17 by DW
-			if (item.subs === undefined) {
-				add ("<div class=\"divSingularItem\"" + getDataAtts (item) + ">" + getRenderedText (item) + "</div>");
-				}
-			else {
-				add ("<div class=\"divTitledItem\">"); indentlevel++;
-				add ("<div class=\"divTitle\">" + getRenderedText (item, true) + "</div>");
-				var itemsubtext = getItemSubs (item, 0, item.permalink);
-				var itemsubmarkdown = getItemSubsMarkdown (item, 0);
-				add (itemsubtext);
-				add ("</div>"); indentlevel--;
-				
-				buildStoryPage (item, itemsubtext, itemsubmarkdown); //12/28/17 by DW
-				}
-			}
-		
-		day.htmltext = htmltext; //so the home page and month archive can access it
-		
-		blogData.htmlArchive [daypath] = { //save the text in blogData.htmlArchive -- 6/10/17 by DW
-			htmltext: htmltext
-			}
-		
-		publishThroughTemplate (relpath, pagetitle, undefined, htmltext, undefined, undefined, function () {
+		if (isComment (day)) {
 			if (callback !== undefined) {
 				callback ();
 				}
-			});
+			}
+		else {
+			var htmltext = "", indentlevel = 0, daypath = utils.getDatePath (new Date (day.created), false), relpath = daypath + ".html", path = blogConfig.basePath + relpath;
+			var urlpage = blogConfig.baseUrl + relpath;
+			var daystring = dateFormat (day.created, "dddd, mmmm d, yyyy"); //9/11/17 by DW
+			var pagetitle = blogConfig.title + ": " + daystring;
+			
+			function add (s) {
+				htmltext += utils.filledString ("\t", indentlevel) + s + "\n";
+				}
+			function getRenderedText (item, flTextIsTitle, urlStoryPage) {
+				var s = processText (item.text), flInlineImage = false;
+				if (item.inlineImage !== undefined) { //1/2/20 by DW
+					s = addInlineImageTo (s, item.inlineImage);
+					flInlineImage = true;
+					}
+				else {
+					if (item.inlineVideo !== undefined) { //10/11/20 by DW
+						s = addInlineVideoTo (s, item.inlineVideo);
+						flInlineImage = true;
+						}
+					}
+				switch (item.type) {
+					case "link":
+						var parsedUrl = urlpack.parse (item.url, true), host = parsedUrl.host;
+						if (utils.beginsWith (host, "www.")) {
+							host = utils.stringDelete (host, 1, 4);
+							}
+						s += "<span class=\"spLink\"><a href=\"" + item.url + "\" target=\"_blank\">" + host + "</a></span>";
+						break;
+					case "markdown": //5/26/17 by DW
+						s = "<span class=\"spRenderedMarkdown\">" + markdownProcess (s) + "</span>";
+						break;
+					}
+				
+				var ourLink = getPermalinkString (item.created); //7/9/17 by DW
+				
+				if (urlStoryPage !== undefined) { //12/30/17 by DW
+					item.permalink = urlStoryPage + "#" + ourLink;
+					}
+				else {
+					if (item.subs !== undefined) { //12/29/17 by DW
+						item.permalink = blogConfig.baseUrl + utils.getDatePath (new Date (day.created), true) + utils.stringDelete (ourLink, 1, 1) + ".html";
+						item.permalink += "?title=" + utils.innerCaseName (item.text); //1/7/20 by DW
+						}
+					else {
+						item.permalink = urlpage + "#" + ourLink;
+						}
+					}
+				
+				var imgHtml = "";
+				if (item.image !== undefined) {
+					imgHtml = "<img class=\"imgRightMargin\" src=\"" + item.image + "\" border=\"0\" style=\"float: right; padding-left: 25px; padding-bottom: 10px; padding-top: 10px; padding-right: 15px;\">";
+					if (item.imageLink !== undefined) { //5/26/20 by DW
+						imgHtml = "<a class=\"anchorRightMargin\" href=\"" + item.imageLink + "\">" + imgHtml + "</a>";
+						}
+					}
+				
+				if (flTextIsTitle) {
+					s = "<a href=\"" + item.permalink + "\"><span class=\"spTitleLink\">" + s + "</a></a>";
+					}
+				
+				var title = "Direct link to this item.";
+				s = "<a name=\"" + ourLink + "\"></a>" + imgHtml + s + "<span class=\"spPermaLink\"><a href=\"" + item.permalink + "\" title=\"" + title + "\">#</a></span>";
+				
+				if (flInlineImage) { //1/3/20 by DW
+					s = "<div class=\"divInlineImage\">" + s + "</div>";
+					}
+				
+				return (s);
+				}
+			function getDataAtts (item) { //7/12/17 by DW
+				var atts = "";
+				for (var x in item) {
+					switch (x) {
+						case "text": case "created": case "permalink": case "subs": //5/16/18 by DW -- added subs
+							break;
+						default:
+							atts += " data-" + x + "=\"" + item [x] + "\"";
+							break;
+						}
+					}
+				return (atts);
+				}
+			function getItemSubs (parent, ulLevel, urlStoryPage) {
+				var htmltext = "", indentlevel = 0, ulAddedClass = "", ulCollapsedClass = "";
+				function add (s) {
+					htmltext += utils.filledString ("\t", indentlevel) + s + "\n";
+					}
+				if (utils.getBoolean (parent.flNumberedSubs)) { //6/15/17 by DW
+					ulAddedClass = " ulNumberedSubs";
+					}
+				else {
+					if (utils.getBoolean (parent.flBulletedSubs)) { //5/15/18 by DW
+						ulAddedClass = " ulBulletedSubs";
+						}
+					else {
+						if (utils.getBoolean (parent.flCodeSubs)) { //4/24/20 by DW
+							ulAddedClass = " ulCodeSubs";
+							}
+						}
+					}
+				if (utils.getBoolean (parent.collapse)) { //5/15/18 by DW
+					ulCollapsedClass = " ulCollapsed";
+					}
+				add ("<ul class=\"ulLevel" + ulLevel + ulAddedClass + ulCollapsedClass + "\">"); indentlevel++;
+				for (var i = 0; i < parent.subs.length; i++) {
+					var item = parent.subs [i];
+					if (notComment (item)) { //11/5/20 by DW
+						add ("<li" + getDataAtts (item) + ">" + getRenderedText (item, undefined, urlStoryPage) + "</li>");
+						if (item.subs !== undefined) {
+							add (getItemSubs (item, ulLevel + 1, urlStoryPage));
+							}
+						}
+					}
+				add ("</ul>"); indentlevel--;
+				return (htmltext);
+				}
+			
+			function getItemSubsMarkdown (storystruct) { //12/22/19 by DW
+				var markdowntext = "", indentlevel = 0;
+				function add (s) {
+					markdowntext += utils.filledString ("\t", indentlevel) + s + "\n";
+					}
+				function getItemText (item) {
+					var img = "";
+					if (item.image !== undefined) {
+						img = "<img src=\"" + item.image + "\" border=\"0\" align=\"right\">";
+						}
+					return (img + item.text);
+					}
+				if (storystruct.subs === undefined) { //it's an untitled story
+					add (getItemText (storystruct));
+					console.log (markdowntext);
+					}
+				else { //it's a titled story
+					add ("# " + storystruct.text);
+					storystruct.subs.forEach (function (sub, ix) {
+						if (sub.subs !== undefined) {
+							var flNumberedSubs = utils.getBoolean (sub.flNumberedSubs);
+							var flBulletedSubs = utils.getBoolean (sub.flBulletedSubs);
+							add (getItemText (sub));
+							sub.subs.forEach (function (listitem, ixitem) {
+								if (flNumberedSubs) {
+									add ((ixitem + 1) + ". " + getItemText (listitem));
+									}
+								else {
+									add ("* " + getItemText (listitem));
+									}
+								});
+							add ("");
+							}
+						else {
+							add (getItemText (sub));
+							add ("");
+							}
+						});
+					}
+				return (markdowntext);
+				}
+			
+			function buildStoryPage (item, itemsubtext, itemsubmarkdown, callback) { //12/28/17 by DW
+				var daypath = utils.getDatePath (new Date (item.created), true);
+				var relpath = daypath + utils.stringDelete (getPermalinkString (item.created), 1, 1) + ".html";
+				var pagetitle = blogConfig.title + ": " + item.text;
+				var metadata = {
+					title: item.text,
+					description: item.description,
+					image: item.metaImage,
+					body: itemsubmarkdown //12/22/19 by DW
+					};
+				
+				function formatTimeLine (when) { //2/11/18 by DW
+					return (dateFormat (when, "dddd mmmm d, yyyy; h:MM TT Z"));
+					}
+				
+				var titleline = "<div class=\"divStoryPageTitle\">" + getRenderedText (item, true) + "</div>";
+				var posttimeline = "<div class=\"divStoryPagePostTime\">" + formatTimeLine (item.created) + "</div>";
+				var htmltext = "<div class=\"divTitledItem\">" + posttimeline + titleline + itemsubtext + "</div>";
+				
+				
+				publishThroughTemplate (relpath, pagetitle, metadata, htmltext, undefined, undefined, function () {
+					if (callback !== undefined) {
+						callback ();
+						}
+					pingForStoryPage (); //10/14/19 by DW
+					});
+				}
+			
+			addDayToCalendar (blogData, day.created, urlpage); //5/13/17 by DW
+			
+			add ("<div class=\"divDayTitle\"><a href=\"" + urlpage + "\">" + daystring + "</a></div>");
+			if (day.subs !== undefined) { //11/5/20 by DW
+				for (var i = 0; i < day.subs.length; i++) { //loop over all top level subs
+					var item = day.subs [i];
+					saveItem (item); //6/4/17 by DW
+					if (notComment (item)) { //11/5/20 by DW
+						if (item.subs === undefined) {
+							add ("<div class=\"divSingularItem\"" + getDataAtts (item) + ">" + getRenderedText (item) + "</div>");
+							}
+						else {
+							add ("<div class=\"divTitledItem\">"); indentlevel++;
+							add ("<div class=\"divTitle\">" + getRenderedText (item, true) + "</div>");
+							var itemsubtext = getItemSubs (item, 0, item.permalink);
+							var itemsubmarkdown = getItemSubsMarkdown (item, 0);
+							add (itemsubtext);
+							add ("</div>"); indentlevel--;
+							
+							buildStoryPage (item, itemsubtext, itemsubmarkdown); //12/28/17 by DW
+							}
+						}
+					}
+				}
+			
+			day.htmltext = htmltext; //so the home page and month archive can access it
+			
+			blogData.htmlArchive [daypath] = { //save the text in blogData.htmlArchive -- 6/10/17 by DW
+				htmltext: htmltext
+				}
+			
+			publishThroughTemplate (relpath, pagetitle, undefined, htmltext, undefined, undefined, function () {
+				if (callback !== undefined) {
+					callback ();
+					}
+				});
+			}
 		}
 	function publishNextDay (ixday, callback) {
 		if (ixday < daysArray.length) {
@@ -1109,10 +1127,12 @@ function publishBlog (jstruct, options, callback) {
 	else {
 		for (var i = 0; i < jstruct.body.subs.length; i++) {
 			var month = jstruct.body.subs [i];
-			for (var j = 0; j < month.subs.length; j++) {
-				var day = month.subs [j];
-				daysArray [daysArray.length] = day;
-				saveDay (day); ///6/10/17 by DW
+			if ((month.subs !== undefined) && notComment (month)) { //11/5/20 by DW
+				for (var j = 0; j < month.subs.length; j++) {
+					var day = month.subs [j];
+					daysArray [daysArray.length] = day;
+					saveDay (day); ///6/10/17 by DW
+					}
 				}
 			}
 		
