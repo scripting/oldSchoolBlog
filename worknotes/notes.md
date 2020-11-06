@@ -1,3 +1,5 @@
+* 11/6/20; 1:52:52 PM by DW
+   * In generated RSS feed, allow for days with no subs, commented days, and commented items.
 * 11/5/20; 12:35:26 PM by DW
    * Fixed bug where random top-level headline that's not part of the calendar structure would cause Old School to fail to process the blog.
    * Fixed bug where an empty day would cause a similar failure.

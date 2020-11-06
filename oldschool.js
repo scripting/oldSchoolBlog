@@ -1,4 +1,4 @@
-var myVersion = "0.6.5", myProductName = "oldSchool";   
+var myVersion = "0.6.6", myProductName = "oldSchool";   
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -992,31 +992,35 @@ function publishBlog (jstruct, options, callback) {
 			headElements.generator = myProductName + " v" + myVersion; //8/24/17 by DW
 		for (var i = 0; i < daysArray.length; i++) {
 			var day = daysArray [i];
-			for (var j = 0; j < day.subs.length; j++) {
-				var item = day.subs [j], obj = new Object ();
-				if (item.subs === undefined) {
-					obj.text = processText (item.text);
-					if (item.inlineImage !== undefined) { //1/13/20 by DW
-						obj.text = "<div class=\"divInlineImage\">" + addInlineImageTo (obj.text, item.inlineImage) + "</div>";
+			if ((day.subs !== undefined) && notComment (day)) { //11/6/20 by DW
+				for (var j = 0; j < day.subs.length; j++) {
+					var item = day.subs [j], obj = new Object ();
+					if (notComment (item)) { //11/6/20 by DW
+						if (item.subs === undefined) {
+							obj.text = processText (item.text);
+							if (item.inlineImage !== undefined) { //1/13/20 by DW
+								obj.text = "<div class=\"divInlineImage\">" + addInlineImageTo (obj.text, item.inlineImage) + "</div>";
+								}
+							}
+						else {
+							obj.title = item.text;
+							obj.text = getSubsText (item);
+							}
+						obj.outline = processOutline (item); //5/12/17 by DW
+						obj.link = item.permalink;
+						obj.pubDate = item.created;
+						obj.guid = {flPermalink: true, value: item.permalink};
+						obj.when = item.created;
+						if ((item.enclosure !== undefined) && (item.enclosureType !== undefined) && (item.enclosureLength !== undefined)) { //6/9/17 by DW
+							obj.enclosure = {
+								url: item.enclosure,
+								type: item.enclosureType,
+								length: item.enclosureLength
+								}
+							}
+						rssHistory [rssHistory.length] = obj;
 						}
 					}
-				else {
-					obj.title = item.text;
-					obj.text = getSubsText (item);
-					}
-				obj.outline = processOutline (item); //5/12/17 by DW
-				obj.link = item.permalink;
-				obj.pubDate = item.created;
-				obj.guid = {flPermalink: true, value: item.permalink};
-				obj.when = item.created;
-				if ((item.enclosure !== undefined) && (item.enclosureType !== undefined) && (item.enclosureLength !== undefined)) { //6/9/17 by DW
-					obj.enclosure = {
-						url: item.enclosure,
-						type: item.enclosureType,
-						length: item.enclosureLength
-						}
-					}
-				rssHistory [rssHistory.length] = obj;
 				}
 			}
 		
