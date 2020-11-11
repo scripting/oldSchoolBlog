@@ -1,3 +1,9 @@
+* 11/11/20; 12:33:09 PM by DW
+   * Standalone pages. If you want to do an About page for your blog, this is how you do it.
+      * 1. Create a new sub-outline, outside the calendar structure. A headline is in the calendar structure if it has a name att or it is contained within a node with a name att.
+      * 2. It must have a type attribute of page.
+      * 3. It must have a relpath attribute that says where the resulting file is to be written, relative to the top of the blog. 
+   * Here's an <a href="https://gist.github.com/scripting/3c9bcf62123d20c6001d087b8722a6d5">example outline</a> that has an about page. 
 * 11/6/20; 1:52:52 PM by DW
    * In generated RSS feed, allow for days with no subs, commented days, and commented items.
 * 11/5/20; 12:35:26 PM by DW

@@ -1,4 +1,4 @@
-var myVersion = "0.6.6", myProductName = "oldSchool";   
+var myVersion = "0.6.7", myProductName = "oldSchool";   
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -239,6 +239,7 @@ function publishBlog (jstruct, options, callback) {
 	var blogConfig = config.blogs [blogName];
 	var blogData = dataForBlogs [blogName]; //10/6/20 by DW
 	var daysArray = new Array (), now = new Date ();
+	
 	function writeAndMirrorFile (localpath, s3relpath, s, type) { //2/4/20 by DW
 		utils.sureFilePath  (localpath, function () {
 			fs.readFile (localpath, function (err, data) {
@@ -344,6 +345,118 @@ function publishBlog (jstruct, options, callback) {
 		var url = fixYoutubeUrl (urlVideo);
 		var videotext = "<iframe width=\"560\" height=\"315\" src=\"" + url + "\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\" allowfullscreen></iframe>";
 		return ("<center>" + videotext + "</center>" + s);
+		}
+	function getRenderedText (item, flTextIsTitle, urlStoryPage) {
+		var s = processText (item.text), flInlineImage = false;
+		if (item.inlineImage !== undefined) { //1/2/20 by DW
+			s = addInlineImageTo (s, item.inlineImage);
+			flInlineImage = true;
+			}
+		else {
+			if (item.inlineVideo !== undefined) { //10/11/20 by DW
+				s = addInlineVideoTo (s, item.inlineVideo);
+				flInlineImage = true;
+				}
+			}
+		switch (item.type) {
+			case "link":
+				var parsedUrl = urlpack.parse (item.url, true), host = parsedUrl.host;
+				if (utils.beginsWith (host, "www.")) {
+					host = utils.stringDelete (host, 1, 4);
+					}
+				s += "<span class=\"spLink\"><a href=\"" + item.url + "\" target=\"_blank\">" + host + "</a></span>";
+				break;
+			case "markdown": //5/26/17 by DW
+				s = "<span class=\"spRenderedMarkdown\">" + markdownProcess (s) + "</span>";
+				break;
+			}
+		
+		var ourLink = getPermalinkString (item.created); //7/9/17 by DW
+		
+		if (urlStoryPage !== undefined) { //12/30/17 by DW
+			item.permalink = urlStoryPage + "#" + ourLink;
+			}
+		else {
+			if (item.subs !== undefined) { //12/29/17 by DW
+				item.permalink = blogConfig.baseUrl + utils.getDatePath (new Date (item.created), true) + utils.stringDelete (ourLink, 1, 1) + ".html";
+				item.permalink += "?title=" + utils.innerCaseName (item.text); //1/7/20 by DW
+				}
+			else {
+				item.permalink = urlpage + "#" + ourLink;
+				}
+			}
+		
+		var imgHtml = "";
+		if (item.image !== undefined) {
+			imgHtml = "<img class=\"imgRightMargin\" src=\"" + item.image + "\" border=\"0\" style=\"float: right; padding-left: 25px; padding-bottom: 10px; padding-top: 10px; padding-right: 15px;\">";
+			if (item.imageLink !== undefined) { //5/26/20 by DW
+				imgHtml = "<a class=\"anchorRightMargin\" href=\"" + item.imageLink + "\">" + imgHtml + "</a>";
+				}
+			}
+		
+		if (flTextIsTitle) {
+			s = "<a href=\"" + item.permalink + "\"><span class=\"spTitleLink\">" + s + "</a></a>";
+			}
+		
+		var title = "Direct link to this item.";
+		s = "<a name=\"" + ourLink + "\"></a>" + imgHtml + s + "<span class=\"spPermaLink\"><a href=\"" + item.permalink + "\" title=\"" + title + "\">#</a></span>";
+		
+		if (flInlineImage) { //1/3/20 by DW
+			s = "<div class=\"divInlineImage\">" + s + "</div>";
+			}
+		
+		return (s);
+		}
+	
+	function formatTimeLine (when) { //2/11/18 by DW
+		return (dateFormat (when, "dddd mmmm d, yyyy; h:MM TT Z"));
+		}
+	function getDataAtts (item) { //7/12/17 by DW
+		var atts = "";
+		for (var x in item) {
+			switch (x) {
+				case "text": case "created": case "permalink": case "subs": //5/16/18 by DW -- added subs
+					break;
+				default:
+					atts += " data-" + x + "=\"" + item [x] + "\"";
+					break;
+				}
+			}
+		return (atts);
+		}
+	function getItemSubs (parent, ulLevel, urlStoryPage) {
+		var htmltext = "", indentlevel = 0, ulAddedClass = "", ulCollapsedClass = "";
+		function add (s) {
+			htmltext += utils.filledString ("\t", indentlevel) + s + "\n";
+			}
+		if (utils.getBoolean (parent.flNumberedSubs)) { //6/15/17 by DW
+			ulAddedClass = " ulNumberedSubs";
+			}
+		else {
+			if (utils.getBoolean (parent.flBulletedSubs)) { //5/15/18 by DW
+				ulAddedClass = " ulBulletedSubs";
+				}
+			else {
+				if (utils.getBoolean (parent.flCodeSubs)) { //4/24/20 by DW
+					ulAddedClass = " ulCodeSubs";
+					}
+				}
+			}
+		if (utils.getBoolean (parent.collapse)) { //5/15/18 by DW
+			ulCollapsedClass = " ulCollapsed";
+			}
+		add ("<ul class=\"ulLevel" + ulLevel + ulAddedClass + ulCollapsedClass + "\">"); indentlevel++;
+		for (var i = 0; i < parent.subs.length; i++) {
+			var item = parent.subs [i];
+			if (notComment (item)) { //11/5/20 by DW
+				add ("<li" + getDataAtts (item) + ">" + getRenderedText (item, undefined, urlStoryPage) + "</li>");
+				if (item.subs !== undefined) {
+					add (getItemSubs (item, ulLevel + 1, urlStoryPage));
+					}
+				}
+			}
+		add ("</ul>"); indentlevel--;
+		return (htmltext);
 		}
 	function publishThroughTemplate (relpath, pagetitle, metadata, htmltext, templatetext, addToConfig, callback) {
 		function getSocialMediaLinks () {
@@ -535,115 +648,6 @@ function publishBlog (jstruct, options, callback) {
 			function add (s) {
 				htmltext += utils.filledString ("\t", indentlevel) + s + "\n";
 				}
-			function getRenderedText (item, flTextIsTitle, urlStoryPage) {
-				var s = processText (item.text), flInlineImage = false;
-				if (item.inlineImage !== undefined) { //1/2/20 by DW
-					s = addInlineImageTo (s, item.inlineImage);
-					flInlineImage = true;
-					}
-				else {
-					if (item.inlineVideo !== undefined) { //10/11/20 by DW
-						s = addInlineVideoTo (s, item.inlineVideo);
-						flInlineImage = true;
-						}
-					}
-				switch (item.type) {
-					case "link":
-						var parsedUrl = urlpack.parse (item.url, true), host = parsedUrl.host;
-						if (utils.beginsWith (host, "www.")) {
-							host = utils.stringDelete (host, 1, 4);
-							}
-						s += "<span class=\"spLink\"><a href=\"" + item.url + "\" target=\"_blank\">" + host + "</a></span>";
-						break;
-					case "markdown": //5/26/17 by DW
-						s = "<span class=\"spRenderedMarkdown\">" + markdownProcess (s) + "</span>";
-						break;
-					}
-				
-				var ourLink = getPermalinkString (item.created); //7/9/17 by DW
-				
-				if (urlStoryPage !== undefined) { //12/30/17 by DW
-					item.permalink = urlStoryPage + "#" + ourLink;
-					}
-				else {
-					if (item.subs !== undefined) { //12/29/17 by DW
-						item.permalink = blogConfig.baseUrl + utils.getDatePath (new Date (day.created), true) + utils.stringDelete (ourLink, 1, 1) + ".html";
-						item.permalink += "?title=" + utils.innerCaseName (item.text); //1/7/20 by DW
-						}
-					else {
-						item.permalink = urlpage + "#" + ourLink;
-						}
-					}
-				
-				var imgHtml = "";
-				if (item.image !== undefined) {
-					imgHtml = "<img class=\"imgRightMargin\" src=\"" + item.image + "\" border=\"0\" style=\"float: right; padding-left: 25px; padding-bottom: 10px; padding-top: 10px; padding-right: 15px;\">";
-					if (item.imageLink !== undefined) { //5/26/20 by DW
-						imgHtml = "<a class=\"anchorRightMargin\" href=\"" + item.imageLink + "\">" + imgHtml + "</a>";
-						}
-					}
-				
-				if (flTextIsTitle) {
-					s = "<a href=\"" + item.permalink + "\"><span class=\"spTitleLink\">" + s + "</a></a>";
-					}
-				
-				var title = "Direct link to this item.";
-				s = "<a name=\"" + ourLink + "\"></a>" + imgHtml + s + "<span class=\"spPermaLink\"><a href=\"" + item.permalink + "\" title=\"" + title + "\">#</a></span>";
-				
-				if (flInlineImage) { //1/3/20 by DW
-					s = "<div class=\"divInlineImage\">" + s + "</div>";
-					}
-				
-				return (s);
-				}
-			function getDataAtts (item) { //7/12/17 by DW
-				var atts = "";
-				for (var x in item) {
-					switch (x) {
-						case "text": case "created": case "permalink": case "subs": //5/16/18 by DW -- added subs
-							break;
-						default:
-							atts += " data-" + x + "=\"" + item [x] + "\"";
-							break;
-						}
-					}
-				return (atts);
-				}
-			function getItemSubs (parent, ulLevel, urlStoryPage) {
-				var htmltext = "", indentlevel = 0, ulAddedClass = "", ulCollapsedClass = "";
-				function add (s) {
-					htmltext += utils.filledString ("\t", indentlevel) + s + "\n";
-					}
-				if (utils.getBoolean (parent.flNumberedSubs)) { //6/15/17 by DW
-					ulAddedClass = " ulNumberedSubs";
-					}
-				else {
-					if (utils.getBoolean (parent.flBulletedSubs)) { //5/15/18 by DW
-						ulAddedClass = " ulBulletedSubs";
-						}
-					else {
-						if (utils.getBoolean (parent.flCodeSubs)) { //4/24/20 by DW
-							ulAddedClass = " ulCodeSubs";
-							}
-						}
-					}
-				if (utils.getBoolean (parent.collapse)) { //5/15/18 by DW
-					ulCollapsedClass = " ulCollapsed";
-					}
-				add ("<ul class=\"ulLevel" + ulLevel + ulAddedClass + ulCollapsedClass + "\">"); indentlevel++;
-				for (var i = 0; i < parent.subs.length; i++) {
-					var item = parent.subs [i];
-					if (notComment (item)) { //11/5/20 by DW
-						add ("<li" + getDataAtts (item) + ">" + getRenderedText (item, undefined, urlStoryPage) + "</li>");
-						if (item.subs !== undefined) {
-							add (getItemSubs (item, ulLevel + 1, urlStoryPage));
-							}
-						}
-					}
-				add ("</ul>"); indentlevel--;
-				return (htmltext);
-				}
-			
 			function getItemSubsMarkdown (storystruct) { //12/22/19 by DW
 				var markdowntext = "", indentlevel = 0;
 				function add (s) {
@@ -685,7 +689,6 @@ function publishBlog (jstruct, options, callback) {
 					}
 				return (markdowntext);
 				}
-			
 			function buildStoryPage (item, itemsubtext, itemsubmarkdown, callback) { //12/28/17 by DW
 				var daypath = utils.getDatePath (new Date (item.created), true);
 				var relpath = daypath + utils.stringDelete (getPermalinkString (item.created), 1, 1) + ".html";
@@ -697,9 +700,6 @@ function publishBlog (jstruct, options, callback) {
 					body: itemsubmarkdown //12/22/19 by DW
 					};
 				
-				function formatTimeLine (when) { //2/11/18 by DW
-					return (dateFormat (when, "dddd mmmm d, yyyy; h:MM TT Z"));
-					}
 				
 				var titleline = "<div class=\"divStoryPageTitle\">" + getRenderedText (item, true) + "</div>";
 				var posttimeline = "<div class=\"divStoryPagePostTime\">" + formatTimeLine (item.created) + "</div>";
@@ -723,7 +723,7 @@ function publishBlog (jstruct, options, callback) {
 					saveItem (item); //6/4/17 by DW
 					if (notComment (item)) { //11/5/20 by DW
 						if (item.subs === undefined) {
-							add ("<div class=\"divSingularItem\"" + getDataAtts (item) + ">" + getRenderedText (item) + "</div>");
+							add ("<div class=\"divSingularItem\"" + getDataAtts (item) + ">" + getRenderedText (item, false, urlpage) + "</div>");
 							}
 						else {
 							add ("<div class=\"divTitledItem\">"); indentlevel++;
@@ -1086,6 +1086,72 @@ function publishBlog (jstruct, options, callback) {
 			callback ();
 			}
 		}
+	
+	function setCalendarFlags () { //11/9/20 by DW
+		function addflags (parent, flInCalendar) {
+			if (parent.name !== undefined) {
+				flInCalendar = true;
+				}
+			parent.flInCalendar = flInCalendar;
+			if (parent.subs !== undefined) {
+				parent.subs.forEach (function (item) {
+					item.flInCalendar = flInCalendar;
+					addflags (item, flInCalendar);
+					});
+				}
+			}
+		addflags (jstruct.body, false);
+		}
+	function publishStandalonePages (callback) { //11/9/20 by DW
+		var pages = new Array ();
+		function findStandalonePages (parent) {
+			if (parent.subs !== undefined) {
+				parent.subs.forEach (function (item) {
+					if (!item.flInCalendar) {
+						if (item.type == "page") {
+							pages.push (item);
+							}
+						else {
+							findStandalonePages (item);
+							}
+						}
+					});
+				}
+			}
+		function publish (item, callback) {
+			console.log ("publishStandalonePages/publish: item.title == " + item.title);
+			if (item.relpath === undefined) {
+				console.log ("publishStandalonePages: can't render the standalone page because it doesn't have a relpath attribute.");
+				}
+			else {
+				var metadata = new Object ();
+				var titleline = "<div class=\"divStoryPageTitle\">" + getRenderedText (item, true) + "</div>";
+				var posttimeline = "<div class=\"divStoryPagePostTime\">" + formatTimeLine (item.created) + "</div>";
+				var itemsubtext = getItemSubs (item, 0, item.permalink);
+				var htmltext = "<div class=\"divTitledItem\">" + posttimeline + titleline + itemsubtext + "</div>";
+				publishThroughTemplate (item.relpath, item.text, metadata, htmltext, undefined, undefined, function () {
+					if (callback !== undefined) {
+						callback ();
+						}
+					});
+				}
+			}
+		function publishNextStandalonePage (ix) {
+			if (ix < pages.length) {
+				publish (pages [ix], function () {
+					publishNextStandalonePage (ix + 1);
+					});
+				}
+			else {
+				if (callback !== undefined) {
+					callback ();
+					}
+				}
+			}
+		findStandalonePages (jstruct.body);
+		publishNextStandalonePage (0);
+		}
+	
 	function getBlogTemplate (callback) {
 		var urlTemplate = (blogConfig.urlTemplate === undefined) ? urlDefaultTemplate : blogConfig.urlTemplate; 
 		httpReadUrl (urlTemplate, function (templatetext) {
@@ -1129,9 +1195,10 @@ function publishBlog (jstruct, options, callback) {
 		debugMessage ("publishBlog: can't publish because there is no blog named \"" + blogName + ".\"");
 		}
 	else {
+		setCalendarFlags (); //11/9/20 by DW
 		for (var i = 0; i < jstruct.body.subs.length; i++) {
 			var month = jstruct.body.subs [i];
-			if ((month.subs !== undefined) && notComment (month)) { //11/5/20 by DW
+			if ((month.subs !== undefined) && notComment (month) && month.flInCalendar) { //11/5/20 by DW
 				for (var j = 0; j < month.subs.length; j++) {
 					var day = month.subs [j];
 					daysArray [daysArray.length] = day;
@@ -1161,6 +1228,7 @@ function publishBlog (jstruct, options, callback) {
 						publishRssFeed ();
 						publishCustomPages ();
 						publishHomeJson (); //7/18/17 by DW
+						publishStandalonePages (); //11/9/20 by DW
 						debugMessage ("publishBlog: ctsecs == " + utils.secondsSince (now));
 						if (callback !== undefined) {
 							callback (blogConfig);
