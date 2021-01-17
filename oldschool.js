@@ -1,4 +1,4 @@
-var myVersion = "0.6.7", myProductName = "oldSchool";   
+var myVersion = "0.6.9", myProductName = "oldSchool";   
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -234,19 +234,26 @@ function notComment (item) { //11/5/20 by DW
 function isComment (item) { //11/5/20 by DW
 	return (utils.getBoolean (item.isComment));
 	}
+
 function publishBlog (jstruct, options, callback) {
 	var blogName = options.blogName; //8/14/17 by DW
 	var blogConfig = config.blogs [blogName];
 	var blogData = dataForBlogs [blogName]; //10/6/20 by DW
 	var daysArray = new Array (), now = new Date ();
 	
-	function writeAndMirrorFile (localpath, s3relpath, s, type) { //2/4/20 by DW
+	function writeAndMirrorFile (localpath, s3relpath, s, type, callback) { //2/4/20 by DW
+		function doCallback (flWroteToPublicFile, urlPublicFile) {
+			if (callback !== undefined) {
+				callback (flWroteToPublicFile, urlPublicFile);
+				}
+			}
 		utils.sureFilePath  (localpath, function () {
 			fs.readFile (localpath, function (err, data) {
 				var flwrite = true;
 				if (!err) {
 					if (data.toString () == s.toString ()) {
 						flwrite = false;
+						doCallback (flwrite);
 						}
 					}
 				if (flwrite) {
@@ -261,8 +268,15 @@ function publishBlog (jstruct, options, callback) {
 						s3.newObject (s3path, s, type, undefined, function (err, data) {
 							if (err) {
 								debugMessage ("writeAndMirrorFile: s3path == " + s3path + ", err.message == " + err.message);
+								doCallback (false); 
+								}
+							else {
+								doCallback (true, blogConfig.baseUrlMirror + s3relpath); //we wrote to a public file
 								}
 							});
+						}
+					else {
+						doCallback (false); //we didn't write to a public file
 						}
 					}
 				});
@@ -302,6 +316,64 @@ function publishBlog (jstruct, options, callback) {
 		var f = config.itemsFolder + blogName + "/" + relpath;
 		writeAndMirrorFile (f, "items/" + relpath, utils.jsonStringify (item), "application/json");
 		}
+	
+	function saveDayInOpml (day) { //1/16/21 by DW
+		function jsonCalendarToOpml (jstruct) { //1/16/21 by DW
+			var opmltext = "", indentlevel = 0;
+			function encode (s) {
+				return (utils.encodeXml (s));
+				}
+			function add (s) {
+				opmltext += utils.filledString ("\t", indentlevel) + s + "\n";
+				}
+			function addval (name, val) {
+				add ("<" + name + ">" + encode (val) + "</" + name + ">");
+				}
+			function addlist (theList) {
+				theList.forEach (function (item) {
+					var attstring = "";
+					for (var x in item) {
+						if ((x != "flInCalendar") && (x != "subs")) {
+							attstring += x + "=\"" + encode (item [x]) + "\" ";
+							}
+						}
+					if (item.subs === undefined) {
+						add ("<outline " + attstring + "/>");
+						}
+					else {
+						add ("<outline " + attstring + ">"); indentlevel++;
+						addlist (item.subs);
+						add ("</outline>"); indentlevel--;
+						}
+					});
+				}
+			add ("<?xml version=\"1.0\"?>");
+			add ("<opml version=\"2.0\">"); indentlevel++;
+			
+			add ("<head>"); indentlevel++;
+			addval ("title", blogConfig.title);
+			addval ("description", blogConfig.description);
+			addval ("dateCreated", jstruct.created);
+			addval ("dateModified", jstruct.created);
+			add ("</head>"); indentlevel--;
+			
+			add ("<body>"); indentlevel++;
+			addlist (jstruct.subs);
+			add ("</body>"); indentlevel--;
+			
+			add ("</opml>"); indentlevel--;
+			return (opmltext);
+			}
+		var relpath = utils.getDatePath (new Date (day.created), false) + ".opml"
+		var f = config.daysFolder + blogName + "/" + relpath;
+		var opmltext = jsonCalendarToOpml (day);
+		writeAndMirrorFile (f, "days/" + relpath, opmltext, "text/xml", function (flWroteToPublicFile, urlOpmlFile) {
+			if (flWroteToPublicFile) {
+				pingTagServer (urlOpmlFile); //1/17/21 by DW
+				}
+			});
+		}
+	
 	function saveDay (day) { //6/10/17 by DW
 		var relpath = utils.getDatePath (new Date (day.created), false) + ".json"
 		var f = config.daysFolder + blogName + "/" + relpath;
@@ -310,6 +382,50 @@ function publishBlog (jstruct, options, callback) {
 		}
 	function glossaryProcess (s) {
 		return (utils.multipleReplaceAll (s, blogConfig.glossary));
+		}
+	function pingTagServer (urlOpmlFile, callback) { //1/13/21 by DW
+		if (blogConfig.urlTagServerPing !== undefined) {
+			var url = utils.replaceAll (blogConfig.urlTagServerPing, "[%url%]", encodeURIComponent (urlOpmlFile));
+			httpReadUrl (url, function (s) {
+				if (callback !== undefined) {
+					callback ();
+					}
+				});
+			}
+		}
+	function tagProcess (s) { //1/13/21; 11:08:44 AM by DW
+		const options = {
+			startChars: "[" + "[",
+			endChars: "]]",
+			}
+		var i = 0;
+		while (i < (s.length - 1)) {
+			if (s [i] == options.startChars [0]) {
+				if (s [i+1] == options.startChars [1]) {
+					var j, flfound = false;
+					for (var j = i + 2; j <= s.length - 2; j++) {
+						if ((s [j] == options.endChars [0]) && (s [j+1] == options.endChars [1])) {
+							var macrotext = utils.stringMid (s, i + 3, j - i - 2);
+							s = utils.stringDelete (s, i + 1, j - i + 2);
+							s = utils.stringInsert (macrotext, s, i);
+							i += macrotext.length;
+							flfound = true;
+							break;
+							}
+						}
+					if (!flfound) {
+						break;
+						}
+					}
+				else {
+					i += 2;
+					}
+				}
+			else {
+				i++;
+				}
+			}
+		return (s);
 		}
 	function processText (s) { //9/2/20 by DW -- all text processing code in one call
 		const macroOptions = {
@@ -329,6 +445,7 @@ function publishBlog (jstruct, options, callback) {
 		s = glossaryProcess (s);
 		s = emojiProcess (s);
 		s = macroprocess (s, macroOptions);
+		s = tagProcess (s);
 		return (s);
 		}
 	function addInlineImageTo (s, urlImage) { //1/13/20 by DW
@@ -395,7 +512,7 @@ function publishBlog (jstruct, options, callback) {
 			}
 		
 		if (flTextIsTitle) {
-			s = "<a href=\"" + item.permalink + "\"><span class=\"spTitleLink\">" + s + "</a></a>";
+			s = "<a href=\"" + item.permalink + "\"><span class=\"spTitleLink\">" + s + "</span></a>";
 			}
 		
 		var title = "Direct link to this item.";
@@ -1203,6 +1320,7 @@ function publishBlog (jstruct, options, callback) {
 					var day = month.subs [j];
 					daysArray [daysArray.length] = day;
 					saveDay (day); ///6/10/17 by DW
+					saveDayInOpml (day); //1/16/21 by DW
 					}
 				}
 			}
@@ -1239,6 +1357,7 @@ function publishBlog (jstruct, options, callback) {
 			});
 		}
 	}
+
 function readConfig (callback) { 
 	fs.readFile (fnameConfig, function (err, jsontext) {
 		if (!err) {
