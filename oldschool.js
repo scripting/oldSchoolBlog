@@ -310,6 +310,9 @@ function publishBlog (jstruct, options, callback) {
 				});
 			}
 		}
+	function getDayTitle (when) {
+		return (dateFormat (when, "dddd, mmmm d, yyyy"));
+		}
 	function saveItem (item) { //6/4/17 by DW
 		var relpath = utils.getDatePath (new Date (item.created), true) + getPermalinkString (item.created) + ".json"
 		
@@ -358,7 +361,9 @@ function publishBlog (jstruct, options, callback) {
 			add ("</head>"); indentlevel--;
 			
 			add ("<body>"); indentlevel++;
+			add ("<outline text=\"" + blogConfig.title + ": " + getDayTitle (day.created) + "\">"); indentlevel++;
 			addlist (jstruct.subs);
+			add ("</outline>"); indentlevel--;
 			add ("</body>"); indentlevel--;
 			
 			add ("</opml>"); indentlevel--;
@@ -759,7 +764,7 @@ function publishBlog (jstruct, options, callback) {
 		else {
 			var htmltext = "", indentlevel = 0, daypath = utils.getDatePath (new Date (day.created), false), relpath = daypath + ".html", path = blogConfig.basePath + relpath;
 			var urlpage = blogConfig.baseUrl + relpath;
-			var daystring = dateFormat (day.created, "dddd, mmmm d, yyyy"); //9/11/17 by DW
+			var daystring = getDayTitle (day.created); 
 			var pagetitle = blogConfig.title + ": " + daystring;
 			
 			function add (s) {
