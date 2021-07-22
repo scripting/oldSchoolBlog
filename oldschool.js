@@ -1,4 +1,4 @@
-var myVersion = "0.6.9", myProductName = "oldSchool";   
+var myVersion = "0.6.12", myProductName = "oldSchool";   
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -412,6 +412,9 @@ function publishBlog (jstruct, options, callback) {
 						if ((s [j] == options.endChars [0]) && (s [j+1] == options.endChars [1])) {
 							var macrotext = utils.stringMid (s, i + 3, j - i - 2);
 							s = utils.stringDelete (s, i + 1, j - i + 2);
+							
+							macrotext = "<span class=\"spTagref\">"  + macrotext + "</span>"; //7/17/21 by DW
+							
 							s = utils.stringInsert (macrotext, s, i);
 							i += macrotext.length;
 							flfound = true;
