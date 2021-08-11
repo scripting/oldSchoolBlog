@@ -1,7 +1,9 @@
-var myVersion = "0.6.12", myProductName = "oldSchool";   
+var myVersion = "0.6.15", myProductName = "oldSchool";   
 
 exports.init = init;
 exports.publishBlog = publishBlog;
+exports.getConfig = getConfig; //8/10/21 by DW
+exports.initBlog = initBlog; //8/10/21 by DW
 
 const rss = require ("daverss");
 const s3 = require ("daves3");
@@ -51,6 +53,10 @@ var config = { //defaults
 var dataForBlogs = { //10/6/20 by DW -- one for each blog
 	};
 
+
+function getConfig () { //8/10/21 by DW
+	return (config);
+	}
 function pingForStoryPage () { //10/14/19 by DW
 	if (config.flXmlRpcPing) {
 		xmlrpc.client (config.urlPingEndpoint, "ping", {}, "xml", function (err, data) {
@@ -1399,6 +1405,56 @@ function writeConfig () { //10/6/20 by DW -- for debugging
 			}
 		});
 	}
+function initBlog (blogName, callback) {
+	var blogConfig = config.blogs [blogName];
+	dataForBlogs [blogName] = {
+		htmlArchive: new Object (),
+		calendar: new Object (),
+		flCalendarChanged: false
+		};
+	var blogData = dataForBlogs [blogName];
+	function getBlogHtmlArchive (callback) {
+		var pagesfolder = config.pagesFolder + blogName + "/", whenstart = new Date ();
+		utils.sureFilePath  (pagesfolder + "x", function () {
+			var yearlist = fs.readdirSync (pagesfolder);
+			blogData.htmlArchive = new Object ();
+			for (var i = 0; i < yearlist.length; i++) {
+				var yearname = yearlist [i], yearfolder = pagesfolder + yearname;
+				if (isDirectory (yearfolder)) {
+					var monthlist = fs.readdirSync (yearfolder);
+					for (var j = 0; j < monthlist.length; j++) {
+						var monthname = monthlist [j]; var monthfolder = yearfolder + "/" + monthname;
+						if (isDirectory (monthfolder)) {
+							var daylist = fs.readdirSync (monthfolder);
+							for (var k = 0; k < daylist.length; k++) {
+								var dayname = daylist [k];
+								if (utils.endsWith (dayname, ".html")) {
+									var f = monthfolder + "/" + dayname;
+									var objname = yearname + "/" + monthname + "/" + dayname;
+									objname = utils.stringMid (objname, 1, objname.length - 5); //pop off .html at end
+									blogData.htmlArchive [objname] = {
+										htmltext: fs.readFileSync (f).toString ()
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			console.log ("getBlogHtmlArchive:  html archive for blog " + blogName + " took " + utils.secondsSince (whenstart) + " seconds to load.");
+			if (callback !== undefined) {
+				callback ();
+				}
+			});
+		}
+	readCalendarJson (blogConfig, blogData, function () {
+		getBlogHtmlArchive (function () {
+			if (callback !== undefined) { //8/10/21 by DW
+				callback ();
+				}
+			});
+		});
+	}
 function init (configParam, callback) {
 	if (configParam !== undefined) {
 		for (x in configParam) {
@@ -1546,53 +1602,6 @@ function init (configParam, callback) {
 							});
 						}
 					}
-				}
-			function initBlog (blogName) {
-				var blogConfig = config.blogs [x];
-				dataForBlogs [x] = {
-					htmlArchive: new Object (),
-					calendar: new Object (),
-					flCalendarChanged: false
-					};
-				var blogData = dataForBlogs [x];
-				function getBlogHtmlArchive (callback) {
-					var pagesfolder = config.pagesFolder + blogName + "/", whenstart = new Date ();
-					utils.sureFilePath  (pagesfolder + "x", function () {
-						var yearlist = fs.readdirSync (pagesfolder);
-						blogData.htmlArchive = new Object ();
-						for (var i = 0; i < yearlist.length; i++) {
-							var yearname = yearlist [i], yearfolder = pagesfolder + yearname;
-							if (isDirectory (yearfolder)) {
-								var monthlist = fs.readdirSync (yearfolder);
-								for (var j = 0; j < monthlist.length; j++) {
-									var monthname = monthlist [j]; var monthfolder = yearfolder + "/" + monthname;
-									if (isDirectory (monthfolder)) {
-										var daylist = fs.readdirSync (monthfolder);
-										for (var k = 0; k < daylist.length; k++) {
-											var dayname = daylist [k];
-											if (utils.endsWith (dayname, ".html")) {
-												var f = monthfolder + "/" + dayname;
-												var objname = yearname + "/" + monthname + "/" + dayname;
-												objname = utils.stringMid (objname, 1, objname.length - 5); //pop off .html at end
-												blogData.htmlArchive [objname] = {
-													htmltext: fs.readFileSync (f).toString ()
-													}
-												}
-											}
-										}
-									}
-								}
-							}
-						console.log ("getBlogHtmlArchive:  html archive for blog " + blogName + " took " + utils.secondsSince (whenstart) + " seconds to load.");
-						if (callback !== undefined) {
-							callback ();
-							}
-						});
-					}
-				readCalendarJson (blogConfig, blogData, function () {
-					getBlogHtmlArchive (function () {
-						});
-					});
 				}
 			function everyMinute () {
 				var now = new Date ();
