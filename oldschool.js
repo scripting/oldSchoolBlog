@@ -1,4 +1,4 @@
-var myVersion = "0.6.15", myProductName = "oldSchool";   
+var myVersion = "0.6.16", myProductName = "oldSchool";   
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -1310,16 +1310,24 @@ function publishBlog (jstruct, options, callback) {
 			}
 		}
 	function getBlogGlossary (callback) {
-		opml.readOpmlUrl (blogConfig.urlGlossaryOpml, function (theOutline) {
+		if (blogConfig.urlGlossaryOpml !== undefined) {
+			opml.readOpmlUrl (blogConfig.urlGlossaryOpml, function (theOutline) {
+				blogConfig.glossary = new Object ();
+				for (i = 0; i < theOutline.subs.length; i++) {
+					var item = theOutline.subs [i];
+					blogConfig.glossary [item.text] = item.subs [0].text;
+					}
+				if (callback !== undefined) {
+					callback ();
+					}
+				});
+			}
+		else {
 			blogConfig.glossary = new Object ();
-			for (i = 0; i < theOutline.subs.length; i++) {
-				var item = theOutline.subs [i];
-				blogConfig.glossary [item.text] = item.subs [0].text;
-				}
 			if (callback !== undefined) {
 				callback ();
 				}
-			});
+			}
 		}
 	
 	if (blogConfig === undefined) { //8/21/17 by DW
