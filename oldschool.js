@@ -1,4 +1,4 @@
-var myVersion = "0.6.16", myProductName = "oldSchool";   
+var myVersion = "0.6.17", myProductName = "oldSchool";    
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -47,6 +47,7 @@ var config = { //defaults
 	urlPingEndpoint: "http://githubstorypage.scripting.com/rpc2", //11/22/19 by DW
 	flSaveRssDebuggingInfo: true, //1/13/20 by DW
 	debugFolder: "data/debug/", //1/13/20 by DW
+	flAlwaysBuildHomePage: true, //8/23/21 by DW
 	blogs: {
 		}
 	};
@@ -742,8 +743,29 @@ function publishBlog (jstruct, options, callback) {
 			templatetext = blogConfig.templatetext; 
 			}
 		var pagetext = utils.multipleReplaceAll (templatetext, pagetable, false, "[%", "%]");
-		findPublishedPage (relpath, function (savedtext) {
-			if (savedtext != pagetable.bodytext) {
+		findPublishedPage (relpath, function (savedtext) { //xxx
+			function mustRebuildPage () { //8/23/21 by DW
+				if (savedtext != pagetable.bodytext) {
+					return (true);
+					}
+				if (blogConfig.flAlwaysBuildHomePage) {
+					if (relpath == config.indexHtmlFname) {
+						console.log ("mustRebuildPage: returning true because it's the index file.");
+						return (true);
+						}
+					else {
+						if (daysArray.length > 0) {
+							var homePathPrefix = utils.getDatePath (daysArray [0].created, false);
+							if (utils.beginsWith (relpath, homePathPrefix)) {
+								console.log ("mustRebuildPage: returning true because " + relpath + " is one of today's pages.");
+								return (true);
+								}
+							}
+						}
+					}
+				return (false);
+				}
+			if (mustRebuildPage ()) { //8/23/21 by DW
 				savePublishedPage (relpath, pagetable.bodytext);
 				publishFile (blogConfig.basePath + relpath, pagetext, "text/html", "public-read", function (err, data) {
 					if (err) {
