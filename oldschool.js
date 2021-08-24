@@ -1,4 +1,4 @@
-var myVersion = "0.6.17", myProductName = "oldSchool";    
+var myVersion = "0.6.19", myProductName = "oldSchool";    
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -47,7 +47,6 @@ var config = { //defaults
 	urlPingEndpoint: "http://githubstorypage.scripting.com/rpc2", //11/22/19 by DW
 	flSaveRssDebuggingInfo: true, //1/13/20 by DW
 	debugFolder: "data/debug/", //1/13/20 by DW
-	flAlwaysBuildHomePage: true, //8/23/21 by DW
 	blogs: {
 		}
 	};
@@ -1373,6 +1372,10 @@ function publishBlog (jstruct, options, callback) {
 		blogConfig.ownerFacebookAccount = jstruct.head.ownerFacebookAccount; //5/26/17 by DW
 		blogConfig.ownerGithubAccount = jstruct.head.ownerGithubAccount; //5/26/17 by DW
 		blogConfig.ownerLinkedinAccount = jstruct.head.ownerLinkedinAccount; //5/26/17 by DW
+		
+		if (blogConfig.flAlwaysBuildHomePage === undefined) { //8/23/21; 1:07:01 PM by DW
+			blogConfig.flAlwaysBuildHomePage = true;
+			}
 		
 		if (blogData.calendar === undefined) { //1/9/20 by DW
 			blogData.calendar = new Object ();
