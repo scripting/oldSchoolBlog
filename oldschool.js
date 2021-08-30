@@ -1,4 +1,4 @@
-var myVersion = "0.6.19", myProductName = "oldSchool";    
+var myVersion = "0.6.20", myProductName = "oldSchool";    
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -53,7 +53,9 @@ var config = { //defaults
 var dataForBlogs = { //10/6/20 by DW -- one for each blog
 	};
 
-
+function dateGreater (d1, d2) { //8/30/21 by DW
+	return (new Date (d1) > new Date (d2));
+	}
 function getConfig () { //8/10/21 by DW
 	return (config);
 	}
@@ -247,6 +249,21 @@ function publishBlog (jstruct, options, callback) {
 	var blogData = dataForBlogs [blogName]; //10/6/20 by DW
 	var daysArray = new Array (), now = new Date ();
 	
+	function dayNotDeleted (whenDayCreated) { //8/30/21 by DW
+		for (var i = 0; i < daysArray.length; i++) {
+			var item = daysArray [i];
+			if (item.created !== undefined) {
+				if (utils.sameDay (item.created, whenDayCreated)) { //it's in the days array ==> has not been deleted
+					return (true);
+					}
+				}
+			}
+		var lastDay = daysArray [daysArray.length - 1];
+		if (lastDay.created !== undefined) {
+			return (dateGreater (lastDay.created, whenDayCreated));
+			}
+		return (true);
+		}
 	function writeAndMirrorFile (localpath, s3relpath, s, type, callback) { //2/4/20 by DW
 		function doCallback (flWroteToPublicFile, urlPublicFile) {
 			if (callback !== undefined) {
@@ -325,7 +342,6 @@ function publishBlog (jstruct, options, callback) {
 		var f = config.itemsFolder + blogName + "/" + relpath;
 		writeAndMirrorFile (f, "items/" + relpath, utils.jsonStringify (item), "application/json");
 		}
-	
 	function saveDayInOpml (day) { //1/16/21 by DW
 		function jsonCalendarToOpml (jstruct) { //1/16/21 by DW
 			var opmltext = "", indentlevel = 0;
@@ -384,7 +400,6 @@ function publishBlog (jstruct, options, callback) {
 				}
 			});
 		}
-	
 	function saveDay (day) { //6/10/17 by DW
 		var relpath = utils.getDatePath (new Date (day.created), false) + ".json"
 		var f = config.daysFolder + blogName + "/" + relpath;
@@ -538,7 +553,6 @@ function publishBlog (jstruct, options, callback) {
 		
 		return (s);
 		}
-	
 	function formatTimeLine (when) { //2/11/18 by DW
 		return (dateFormat (when, "dddd mmmm d, yyyy; h:MM TT Z"));
 		}
@@ -922,11 +936,14 @@ function publishBlog (jstruct, options, callback) {
 		
 		var theDay = new Date ();
 		newestDayOnHomePage = theDay;
-		for (var i = 0; i < ctDays; i++) {
+		for (var i = 0; i < ctDays; i++) { //xxx
 			var dayInArchive = blogData.htmlArchive [utils.getDatePath (theDay, false)];
-			if (dayInArchive !== undefined) {
-				htmltext += "<div class=\"divArchivePageDay\">" + dayInArchive.htmltext + "</div>";
+			if (dayNotDeleted (theDay)) { //8/30/21 by DW
+				if (dayInArchive !== undefined) {
+					htmltext += "<div class=\"divArchivePageDay\">" + dayInArchive.htmltext + "</div>";
+					}
 				}
+			
 			oldestDayOnHomePage = theDay;
 			theDay = utils.dateYesterday (theDay);
 			}

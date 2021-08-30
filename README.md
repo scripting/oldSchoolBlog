@@ -8,6 +8,16 @@ I wrote a <a href="http://scripting.com/2019/06/02/150411.html">blog post</a> on
 
 ### Updates
 
+#### v0.6.20 --8/30/21 by DW
+
+Drummer users reported that if they delete a day in the outline, it doesn't get deleted from the rendered blog.
+
+But this feature is necessary for Scripting News, when I do the monthly rollover and empty the outline
+
+Struck a compromise. If a day has been deleted and it's before the last item in the outline, by date, then we do not include it on the home page. If it's after the last date in the outline, we do include it. 
+
+We'll get a test of this on Sept 1, in two days. 
+
 #### v0.6.17 -- 8/23/21 by DW
 
 New config setting, blogConfig.flAlwaysBuildHomePage -- if true -- we rebuild the home page and all pages prefixed with its date (the archive page, story pages). 
