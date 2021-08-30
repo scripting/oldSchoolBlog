@@ -1,4 +1,4 @@
-var myVersion = "0.6.20", myProductName = "oldSchool";    
+var myVersion = "0.6.21", myProductName = "oldSchool";    
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -250,19 +250,20 @@ function publishBlog (jstruct, options, callback) {
 	var daysArray = new Array (), now = new Date ();
 	
 	function dayNotDeleted (whenDayCreated) { //8/30/21 by DW
-		for (var i = 0; i < daysArray.length; i++) {
-			var item = daysArray [i];
-			if (item.created !== undefined) {
-				if (utils.sameDay (item.created, whenDayCreated)) { //it's in the days array ==> has not been deleted
-					return (true);
+		if (blogConfig.flOldSchoolUseCache) {
+			return (true);
+			}
+		else {
+			for (var i = 0; i < daysArray.length; i++) {
+				var item = daysArray [i];
+				if (item.created !== undefined) {
+					if (utils.sameDay (item.created, whenDayCreated)) { //it's in the days array ==> has not been deleted
+						return (true);
+						}
 					}
 				}
+			return (false);
 			}
-		var lastDay = daysArray [daysArray.length - 1];
-		if (lastDay.created !== undefined) {
-			return (dateGreater (lastDay.created, whenDayCreated));
-			}
-		return (true);
 		}
 	function writeAndMirrorFile (localpath, s3relpath, s, type, callback) { //2/4/20 by DW
 		function doCallback (flWroteToPublicFile, urlPublicFile) {
@@ -937,8 +938,8 @@ function publishBlog (jstruct, options, callback) {
 		var theDay = new Date ();
 		newestDayOnHomePage = theDay;
 		for (var i = 0; i < ctDays; i++) { //xxx
-			var dayInArchive = blogData.htmlArchive [utils.getDatePath (theDay, false)];
 			if (dayNotDeleted (theDay)) { //8/30/21 by DW
+				var dayInArchive = blogData.htmlArchive [utils.getDatePath (theDay, false)];
 				if (dayInArchive !== undefined) {
 					htmltext += "<div class=\"divArchivePageDay\">" + dayInArchive.htmltext + "</div>";
 					}
@@ -1392,6 +1393,9 @@ function publishBlog (jstruct, options, callback) {
 		
 		if (blogConfig.flAlwaysBuildHomePage === undefined) { //8/23/21; 1:07:01 PM by DW
 			blogConfig.flAlwaysBuildHomePage = true;
+			}
+		if (blogConfig.flOldSchoolUseCache === undefined) { //8/30/21 by DW
+			blogConfig.flOldSchoolUseCache = false;
 			}
 		
 		if (blogData.calendar === undefined) { //1/9/20 by DW
