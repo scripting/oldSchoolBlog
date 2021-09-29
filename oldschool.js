@@ -1,4 +1,4 @@
-var myVersion = "0.6.21", myProductName = "oldSchool";    
+var myVersion = "0.6.24", myProductName = "oldSchool";    
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -249,7 +249,7 @@ function publishBlog (jstruct, options, callback) {
 	var blogData = dataForBlogs [blogName]; //10/6/20 by DW
 	var daysArray = new Array (), now = new Date ();
 	
-	function dayNotDeleted (whenDayCreated) { //8/30/21 by DW
+	function dayNotDeleted (whenDayCreated) { //8/30/21 by DW 
 		if (blogConfig.flOldSchoolUseCache) {
 			return (true);
 			}
@@ -356,22 +356,24 @@ function publishBlog (jstruct, options, callback) {
 				add ("<" + name + ">" + encode (val) + "</" + name + ">");
 				}
 			function addlist (theList) {
-				theList.forEach (function (item) {
-					var attstring = "";
-					for (var x in item) {
-						if ((x != "flInCalendar") && (x != "subs")) {
-							attstring += x + "=\"" + encode (item [x]) + "\" ";
+				if (theList !== undefined) { //9/28/21 by DW -- this happens, let it not crash the server
+					theList.forEach (function (item) {
+						var attstring = "";
+						for (var x in item) {
+							if ((x != "flInCalendar") && (x != "subs")) {
+								attstring += x + "=\"" + encode (item [x]) + "\" ";
+								}
 							}
-						}
-					if (item.subs === undefined) {
-						add ("<outline " + attstring + "/>");
-						}
-					else {
-						add ("<outline " + attstring + ">"); indentlevel++;
-						addlist (item.subs);
-						add ("</outline>"); indentlevel--;
-						}
-					});
+						if (item.subs === undefined) {
+							add ("<outline " + attstring + "/>");
+							}
+						else {
+							add ("<outline " + attstring + ">"); indentlevel++;
+							addlist (item.subs);
+							add ("</outline>"); indentlevel--;
+							}
+						});
+					}
 				}
 			add ("<?xml version=\"1.0\"?>");
 			add ("<opml version=\"2.0\">"); indentlevel++;
