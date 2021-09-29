@@ -1,4 +1,4 @@
-var myVersion = "0.6.24", myProductName = "oldSchool";    
+var myVersion = "0.6.25", myProductName = "oldSchool";    
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -934,22 +934,51 @@ function publishBlog (jstruct, options, callback) {
 			}
 		}
 	function publishHomePage (callback) {
-		var htmltext = "", pagetitle = blogConfig.title, ctDays = blogConfig.maxDaysOnHomePage;
+		
+		function getEarliestDayInHtmlArchive () { //9/29/21 by DW
+			var earliestday = new Date ();
+			for (var x in blogData.htmlArchive) {
+				var splits = x.split ("/"); //x is something like 2021/08/09
+				if (splits.length == 3) {
+					var thisday = new Date (x);
+					if (thisday < earliestday) {
+						earliestday = thisday;
+						}
+					}
+				}
+			return (earliestday);
+			}
+		
+		var htmltext = "", pagetitle = blogConfig.title, ctDays = blogConfig.maxDaysOnHomePage, ctDaysOnHomePage = 0;
 		var newestDayOnHomePage = undefined, oldestDayOnHomePage = undefined; //10/17/19 by DW
+		var earliestDayInHtmlArchive = getEarliestDayInHtmlArchive ();
 		
 		var theDay = new Date ();
-		newestDayOnHomePage = theDay;
-		for (var i = 0; i < ctDays; i++) { //xxx
+		
+		while (true) {
+			if (theDay < earliestDayInHtmlArchive) {
+				break;
+				}
 			if (dayNotDeleted (theDay)) { //8/30/21 by DW
 				var dayInArchive = blogData.htmlArchive [utils.getDatePath (theDay, false)];
 				if (dayInArchive !== undefined) {
 					htmltext += "<div class=\"divArchivePageDay\">" + dayInArchive.htmltext + "</div>";
+					if (newestDayOnHomePage === undefined) {
+						newestDayOnHomePage = theDay;
+						}
+					oldestDayOnHomePage = theDay;
+					if (++ctDaysOnHomePage > blogConfig.maxDaysOnHomePage) {
+						break;
+						}
 					}
 				}
-			
-			oldestDayOnHomePage = theDay;
 			theDay = utils.dateYesterday (theDay);
 			}
+		
+		
+		
+		
+		
 		
 		var addToConfig = {
 			flHomePage: true, //so JS code can tell that it should add the tabs
