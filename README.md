@@ -1,4 +1,4 @@
-# oldSchoolBlog
+# oldSchoolBlog 
 
 Blogging in the ways of the old school.
 
@@ -7,6 +7,16 @@ Blogging in the ways of the old school.
 I wrote a <a href="http://scripting.com/2019/06/02/150411.html">blog post</a> on June 2, 2019 about Old School. 
 
 ### Updates
+
+#### v0.6.25 --8/30/21 by DW
+
+Old School was counting days on the home page incorrectly. 
+
+There's a max of 25 days (default), it was counting every day as it worked its way back, whether or not anything had been posted that day. 
+
+So with 25 as the max, it ran out of days on Sept 4. And thus it didn't look at anything earlier than that.
+
+I had to rewrite the loop so it only counted days that there were actual posts on, and now it works.
 
 #### v0.6.20 --8/30/21 by DW
 
