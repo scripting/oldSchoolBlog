@@ -8,6 +8,10 @@ I wrote a <a href="http://scripting.com/2019/06/02/150411.html">blog post</a> on
 
 ### Updates
 
+#### v0.6.26 --10/14/21 by DW
+
+Support for new timeZoneOffset head-level attribute. 
+
 #### v0.6.25 --8/30/21 by DW
 
 Old School was counting days on the home page incorrectly. 

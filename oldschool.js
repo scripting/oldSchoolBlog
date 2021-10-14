@@ -1,4 +1,4 @@
-var myVersion = "0.6.25", myProductName = "oldSchool";    
+var myVersion = "0.6.26", myProductName = "oldSchool";    
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -90,29 +90,6 @@ function debugMessage (theMessage) { //8/8/17 by DW
 	console.log (theMessage);
 	if (config.debugMessageCallback !== undefined) {
 		config.debugMessageCallback (theMessage);
-		}
-	}
-function getPermalinkString (when) { //7/9/17 by DW
-	var pattern = "HHMMss", flUseDateFormat = false;
-	if (new Date (when) < new Date ("Sun Jul 09 2017 17:53:55 GMT")) {
-		pattern = "hhmmss";
-		flUseDateFormat = true;
-		}
-	else {
-		if (new Date (when) < new Date ("Mon, 13 Nov 2017 03:56:28 GMT")) {
-			pattern = "hhMMss";
-			flUseDateFormat = true;
-			}
-		}
-	if (flUseDateFormat) {
-		return ("a" + dateFormat (when, pattern));
-		}
-	else {
-		function pad (num) {
-			return (utils.padWithZeros (num, 2));
-			}
-		var d = new Date (when);
-		return ("a" + pad (d.getUTCHours ()) + pad (d.getUTCMinutes ()) + pad (d.getUTCSeconds ()));
 		}
 	}
 function httpReadUrl (url, callback) {
@@ -249,6 +226,53 @@ function publishBlog (jstruct, options, callback) {
 	var blogData = dataForBlogs [blogName]; //10/6/20 by DW
 	var daysArray = new Array (), now = new Date ();
 	
+	function cmsDateFormat (when, pattern) { //10/13/21 by DW
+		function processTimeZoneString (s) { //convert someting like 5:30 to 5.5
+			var splits = s.split (":");
+			if (splits.length == 2) {
+				var ctsecs = Number (splits [1]);
+				s = Number (splits [0]) + (ctsecs / 60);
+				}
+			return (s);
+			}
+		try {
+			var offset = Number (processTimeZoneString (blogConfig.timeZoneOffset));
+			var d = new Date (when);
+			var localTime = d.getTime ();
+			var localOffset = d.getTimezoneOffset () *  60000;
+			var utc = localTime + localOffset;
+			var newTime = utc + (3600000 * offset);
+			
+			var formattedDate = dateFormat (newTime, pattern);
+			return (formattedDate);
+			}
+		catch (tryerror) {
+			return (dateFormat (when, pattern));
+			}
+		}
+	function getPermalinkString (when) { //7/9/17 by DW
+		var pattern = "HHMMss", flUseDateFormat = false;
+		if (new Date (when) < new Date ("Sun Jul 09 2017 17:53:55 GMT")) {
+			pattern = "hhmmss";
+			flUseDateFormat = true;
+			}
+		else {
+			if (new Date (when) < new Date ("Mon, 13 Nov 2017 03:56:28 GMT")) {
+				pattern = "hhMMss";
+				flUseDateFormat = true;
+				}
+			}
+		if (flUseDateFormat) {
+			return ("a" + cmsDateFormat (when, pattern));
+			}
+		else {
+			function pad (num) {
+				return (utils.padWithZeros (num, 2));
+				}
+			var d = new Date (when);
+			return ("a" + pad (d.getUTCHours ()) + pad (d.getUTCMinutes ()) + pad (d.getUTCSeconds ()));
+			}
+		}
 	function dayNotDeleted (whenDayCreated) { //8/30/21 by DW 
 		if (blogConfig.flOldSchoolUseCache) {
 			return (true);
@@ -335,7 +359,7 @@ function publishBlog (jstruct, options, callback) {
 			}
 		}
 	function getDayTitle (when) {
-		return (dateFormat (when, "dddd, mmmm d, yyyy"));
+		return (cmsDateFormat (when, "dddd, mmmm d, yyyy"));
 		}
 	function saveItem (item) { //6/4/17 by DW
 		var relpath = utils.getDatePath (new Date (item.created), true) + getPermalinkString (item.created) + ".json"
@@ -557,7 +581,7 @@ function publishBlog (jstruct, options, callback) {
 		return (s);
 		}
 	function formatTimeLine (when) { //2/11/18 by DW
-		return (dateFormat (when, "dddd mmmm d, yyyy; h:MM TT Z"));
+		return (cmsDateFormat (when, "dddd mmmm d, yyyy; h:MM TT Z"));
 		}
 	function getDataAtts (item) { //7/12/17 by DW
 		var atts = "";
@@ -749,7 +773,7 @@ function publishBlog (jstruct, options, callback) {
 			facebookmetadata: getFacebookMetadata (pagetitle, relpath),
 			socialMediaLinks: getSocialMediaLinks (),
 			rssLink: getRssLink (),
-			now: dateFormat (now, "dddd mmmm d, yyyy; h:MM TT Z"),
+			now: cmsDateFormat (now, "dddd mmmm d, yyyy; h:MM TT Z"),
 			generator: myProductName + " v" + myVersion, //11/4/20 by DW
 			configJson: getConfigJson (),
 			opmlHead: getOpmlHeadInJson (),
@@ -759,7 +783,7 @@ function publishBlog (jstruct, options, callback) {
 			templatetext = blogConfig.templatetext; 
 			}
 		var pagetext = utils.multipleReplaceAll (templatetext, pagetable, false, "[%", "%]");
-		findPublishedPage (relpath, function (savedtext) { //xxx
+		findPublishedPage (relpath, function (savedtext) {
 			function mustRebuildPage () { //8/23/21 by DW
 				if (savedtext != pagetable.bodytext) {
 					return (true);
@@ -1016,7 +1040,7 @@ function publishBlog (jstruct, options, callback) {
 		}
 	function publishMonthArchivePage (callback) {
 		var now = new Date (), relpath = now.getFullYear () + "/" + utils.padWithZeros (now.getMonth () + 1, 2) + "/" + config.indexHtmlFname;
-		var pagetitle = blogConfig.title + ": " + dateFormat (now, "mmmm yyyy");
+		var pagetitle = blogConfig.title + ": " + cmsDateFormat (now, "mmmm yyyy");
 		function getMonthlyHtml () {
 			var htmltext = "";
 			var ctDays = daysInMonth (now), year = now.getFullYear (), month = now.getMonth ();
