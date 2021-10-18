@@ -1,7 +1,7 @@
 {
 	"name": "oldschoolblog", 
 	"description": "Blogging in the ways of the old school.",
-	"version": "0.6.26",
+	"version": "0.6.29",
 	"author": "Dave Winer <dave@scripting.com>",
 	"license": "MIT",
 	"repository": {
@@ -20,7 +20,7 @@
 		"node-emoji": "*",
 		"daverss": "*",
 		"daves3": "*", 
-		"daveopml": "*",
+		"opml": "*",
 		"daveutils": "*",
 		"davexmlrpc": "*",
 		"macroprocess": "*"

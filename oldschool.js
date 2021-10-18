@@ -1,4 +1,4 @@
-var myVersion = "0.6.26", myProductName = "oldSchool";    
+var myVersion = "0.6.29", myProductName = "oldSchool";    
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -17,7 +17,7 @@ const emoji = require ("node-emoji");
 const marked = require ("marked"); 
 const fs = require ("fs");
 const querystring = require ("querystring");
-const opml = require ("daveopml");
+const opml = require ("opml");
 const xmlrpc = require ("davexmlrpc"); //10/14/19 by DW
 const macroprocess = require ("macroprocess"); //9/2/20 by DW
 
@@ -219,6 +219,23 @@ function notComment (item) { //11/5/20 by DW
 function isComment (item) { //11/5/20 by DW
 	return (utils.getBoolean (item.isComment));
 	}
+function httpReadOutline (url, callback) { //10/18/21 by DW
+	httpReadUrl (url, function (opmltext) {
+		if (opmltext === undefined) {
+			callback ({message: "Can't read the outline."});
+			}
+		else {
+			opml.parse (opmltext, function (err, theOutline) {
+				if (err) {
+					callback (err);
+					}
+				else {
+					callback (undefined, theOutline);
+					}
+				});
+			}
+		});
+	}
 
 function publishBlog (jstruct, options, callback) {
 	var blogName = options.blogName; //8/14/17 by DW
@@ -231,7 +248,11 @@ function publishBlog (jstruct, options, callback) {
 			var splits = s.split (":");
 			if (splits.length == 2) {
 				var ctsecs = Number (splits [1]);
-				s = Number (splits [0]) + (ctsecs / 60);
+				var hourFraction = ctsecs / 60;
+				if (s [0] == "-") {
+					hourFraction = -hourFraction;
+					}
+				s = Number (splits [0]) + hourFraction;
 				}
 			return (s);
 			}
@@ -687,6 +708,14 @@ function publishBlog (jstruct, options, callback) {
 		function getOpmlHeadInJson () {
 			return (utils.jsonStringify (blogConfig.jstruct.head));
 			}
+		function getAboutOutlineInJson () { //10/18/21 by DW -- xxx
+			if ((blogConfig.aboutOutline !== undefined) && (relpath == config.indexHtmlFname)) {
+				return (utils.jsonStringify (blogConfig.aboutOutline));
+				}
+			else {
+				return (undefined);
+				}
+			}
 		function getRssLink () {
 			return ("<link rel=\"alternate\" type=\"application/rss+xml\" href=\"" + blogConfig.baseUrl + config.rssFname + "\">");
 			}
@@ -777,6 +806,7 @@ function publishBlog (jstruct, options, callback) {
 			generator: myProductName + " v" + myVersion, //11/4/20 by DW
 			configJson: getConfigJson (),
 			opmlHead: getOpmlHeadInJson (),
+			aboutOutline: getAboutOutlineInJson () //10/18/21 by DW
 			};
 		utils.copyScalars (blogConfig.jstruct.head, pagetable);
 		if (templatetext === undefined) { //9/12/17 by DW
@@ -958,7 +988,6 @@ function publishBlog (jstruct, options, callback) {
 			}
 		}
 	function publishHomePage (callback) {
-		
 		function getEarliestDayInHtmlArchive () { //9/29/21 by DW
 			var earliestday = new Date ();
 			for (var x in blogData.htmlArchive) {
@@ -972,13 +1001,10 @@ function publishBlog (jstruct, options, callback) {
 				}
 			return (earliestday);
 			}
-		
 		var htmltext = "", pagetitle = blogConfig.title, ctDays = blogConfig.maxDaysOnHomePage, ctDaysOnHomePage = 0;
 		var newestDayOnHomePage = undefined, oldestDayOnHomePage = undefined; //10/17/19 by DW
 		var earliestDayInHtmlArchive = getEarliestDayInHtmlArchive ();
-		
 		var theDay = new Date ();
-		
 		while (true) {
 			if (theDay < earliestDayInHtmlArchive) {
 				break;
@@ -998,12 +1024,6 @@ function publishBlog (jstruct, options, callback) {
 				}
 			theDay = utils.dateYesterday (theDay);
 			}
-		
-		
-		
-		
-		
-		
 		var addToConfig = {
 			flHomePage: true, //so JS code can tell that it should add the tabs
 			newestDayOnHomePage, oldestDayOnHomePage //10/17/19 by DW
@@ -1311,7 +1331,6 @@ function publishBlog (jstruct, options, callback) {
 			callback ();
 			}
 		}
-	
 	function setCalendarFlags () { //11/9/20 by DW
 		function addflags (parent, flInCalendar) {
 			if (parent.name !== undefined) {
@@ -1376,7 +1395,6 @@ function publishBlog (jstruct, options, callback) {
 		findStandalonePages (jstruct.body);
 		publishNextStandalonePage (0);
 		}
-	
 	function getBlogTemplate (callback) {
 		var urlTemplate = (blogConfig.urlTemplate === undefined) ? urlDefaultTemplate : blogConfig.urlTemplate; 
 		httpReadUrl (urlTemplate, function (templatetext) {
@@ -1405,11 +1423,13 @@ function publishBlog (jstruct, options, callback) {
 		}
 	function getBlogGlossary (callback) {
 		if (blogConfig.urlGlossaryOpml !== undefined) {
-			opml.readOpmlUrl (blogConfig.urlGlossaryOpml, function (theOutline) {
+			httpReadOutline (blogConfig.urlGlossaryOpml, function (err, theOutline) {
 				blogConfig.glossary = new Object ();
-				for (i = 0; i < theOutline.subs.length; i++) {
-					var item = theOutline.subs [i];
-					blogConfig.glossary [item.text] = item.subs [0].text;
+				if (!err) {
+					for (i = 0; i < theOutline.opml.body.subs.length; i++) {
+						var item = theOutline.opml.body.subs [i];
+						blogConfig.glossary [item.text] = item.subs [0].text;
+						}
 					}
 				if (callback !== undefined) {
 					callback ();
@@ -1418,6 +1438,27 @@ function publishBlog (jstruct, options, callback) {
 			}
 		else {
 			blogConfig.glossary = new Object ();
+			if (callback !== undefined) {
+				callback ();
+				}
+			}
+		}
+	function getAboutOutline (callback) { //10/18/21 by DW
+		if (blogConfig.urlAboutOpml !== undefined) {
+			httpReadOutline (blogConfig.urlAboutOpml, function (err, theOutline) {
+				if (err) {
+					blogConfig.aboutOutline = undefined;
+					}
+				else {
+					blogConfig.aboutOutline = theOutline;
+					}
+				if (callback !== undefined) {
+					callback ();
+					}
+				});
+			}
+		else {
+			blogConfig.aboutOutline = undefined;
 			if (callback !== undefined) {
 				callback ();
 				}
@@ -1460,20 +1501,22 @@ function publishBlog (jstruct, options, callback) {
 			blogData.htmlArchive = new Object ();
 			}
 		
-		getBlogGlossary (function () {
-			getHomePageTemplate (function () {
-				getBlogTemplate (function () {
-					publishNextDay (0, function () { //callback runs when all daily pages have been built
-						publishHomePage ();
-						publishMonthArchivePage ();
-						publishRssFeed ();
-						publishCustomPages ();
-						publishHomeJson (); //7/18/17 by DW
-						publishStandalonePages (); //11/9/20 by DW
-						debugMessage ("publishBlog: ctsecs == " + utils.secondsSince (now));
-						if (callback !== undefined) {
-							callback (blogConfig);
-							}
+		getAboutOutline (function () {
+			getBlogGlossary (function () {
+				getHomePageTemplate (function () {
+					getBlogTemplate (function () {
+						publishNextDay (0, function () { //callback runs when all daily pages have been built
+							publishHomePage ();
+							publishMonthArchivePage ();
+							publishRssFeed ();
+							publishCustomPages ();
+							publishHomeJson (); //7/18/17 by DW
+							publishStandalonePages (); //11/9/20 by DW
+							debugMessage ("publishBlog: ctsecs == " + utils.secondsSince (now));
+							if (callback !== undefined) {
+								callback (blogConfig);
+								}
+							});
 						});
 					});
 				});
@@ -1598,13 +1641,13 @@ function init (configParam, callback) {
 						}
 					else {
 						if (blogConfig.urlJson === undefined) { //1/9/20 by DW
-							opml.readOpmlUrl (blogConfig.urlOpml, function (theOutline) {
-								var container = {
-									head: {
-										},
-									body: theOutline
-									};
-								callback (utils.jsonStringify (container));
+							httpReadOutline (blogConfig.urlOpml, function (err, theOutline) {
+								if (err) {
+									callback (undefined);
+									}
+								else {
+									callback (utils.jsonStringify (theOutline));
+									}
 								});
 							}
 						else {

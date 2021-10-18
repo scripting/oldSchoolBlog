@@ -8,6 +8,18 @@ I wrote a <a href="http://scripting.com/2019/06/02/150411.html">blog post</a> on
 
 ### Updates
 
+#### v0.6.29 --10/18/21 by DW
+
+Add support for urlAboutOpml.
+
+We were using daveopml, an old package, that has some advantages, ie it expands includes.
+
+But I prefer using the new opml package, it's what we're using going forward. And unlike daveopml, it returns the full opml structure, not just the top level subs. 
+
+At some point we're going to want the actual head values in the about outline, for example, and if we continue this way, we won't have them.
+
+The expanding includes code can be pulled out of daveopml and added to opml. 
+
 #### v0.6.26 --10/14/21 by DW
 
 Support for new timeZoneOffset head-level attribute. 
