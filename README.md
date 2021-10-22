@@ -8,6 +8,10 @@ I wrote a <a href="http://scripting.com/2019/06/02/150411.html">blog post</a> on
 
 ### Updates
 
+#### v0.6.30 --10/22/21 by DW
+
+Two time zone fixes. Had to implement new versions of utils.sameDay and utils.getDatePath that take UTC and the user's local time into account. Full details <a href="https://github.com/scripting/drummerSupport/issues/88">here</a>. Thanks to Amit Gawande for his patience in dealing with these problems from India. 
+
 #### v0.6.29 --10/18/21 by DW
 
 Add support for urlAboutOpml.

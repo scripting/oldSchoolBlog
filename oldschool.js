@@ -1,4 +1,4 @@
-var myVersion = "0.6.29", myProductName = "oldSchool";    
+var myVersion = "0.6.30", myProductName = "oldSchool";    
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -236,6 +236,12 @@ function httpReadOutline (url, callback) { //10/18/21 by DW
 			}
 		});
 	}
+function sameDayUTC (d1, d2) { //10/22/21 by DW 
+	//returns true if the two dates are on the same day, in UTC
+	d1 = new Date (d1);
+	d2 = new Date (d2);
+	return ((d1.getUTCFullYear () == d2.getUTCFullYear ()) && (d1.getUTCMonth () == d2.getUTCMonth ()) && (d1.getUTCDate () == d2.getUTCDate ()));
+	}
 
 function publishBlog (jstruct, options, callback) {
 	var blogName = options.blogName; //8/14/17 by DW
@@ -243,7 +249,8 @@ function publishBlog (jstruct, options, callback) {
 	var blogData = dataForBlogs [blogName]; //10/6/20 by DW
 	var daysArray = new Array (), now = new Date ();
 	
-	function cmsDateFormat (when, pattern) { //10/13/21 by DW
+	
+	function getBlogTime (when) { //10/22/21 by DW
 		function processTimeZoneString (s) { //convert someting like 5:30 to 5.5
 			var splits = s.split (":");
 			if (splits.length == 2) {
@@ -262,8 +269,16 @@ function publishBlog (jstruct, options, callback) {
 			var localTime = d.getTime ();
 			var localOffset = d.getTimezoneOffset () *  60000;
 			var utc = localTime + localOffset;
-			var newTime = utc + (3600000 * offset);
-			
+			var blogTime = utc + (3600000 * offset);
+			return (blogTime);
+			}
+		catch (err) {
+			return (when.getTime ());
+			}
+		}
+	function cmsDateFormat (when, pattern) { //10/13/21 by DW
+		try {
+			var newTime = getBlogTime (when);
 			var formattedDate = dateFormat (newTime, pattern);
 			return (formattedDate);
 			}
@@ -271,6 +286,29 @@ function publishBlog (jstruct, options, callback) {
 			return (dateFormat (when, pattern));
 			}
 		}
+	function cmsGetDatePath (theDate, flLastSeparator) { //10/22/21 by DW
+		if (theDate === undefined) {
+			theDate = new Date ();
+			}
+		else {
+			theDate = new Date (theDate); //8/12/14 by DW -- make sure it's a date type
+			}
+		if (flLastSeparator === undefined) {
+			flLastSeparator = true;
+			}
+		var blogDate = new Date (getBlogTime (theDate));
+		var month = utils.padWithZeros (blogDate.getMonth () + 1, 2);
+		var day = utils.padWithZeros (blogDate.getDate (), 2);
+		var year = blogDate.getFullYear ();
+		
+		if (flLastSeparator) {
+			return (year + "/" + month + "/" + day + "/");
+			}
+		else {
+			return (year + "/" + month + "/" + day);
+			}
+		}
+	
 	function getPermalinkString (when) { //7/9/17 by DW
 		var pattern = "HHMMss", flUseDateFormat = false;
 		if (new Date (when) < new Date ("Sun Jul 09 2017 17:53:55 GMT")) {
@@ -302,7 +340,7 @@ function publishBlog (jstruct, options, callback) {
 			for (var i = 0; i < daysArray.length; i++) {
 				var item = daysArray [i];
 				if (item.created !== undefined) {
-					if (utils.sameDay (item.created, whenDayCreated)) { //it's in the days array ==> has not been deleted
+					if (sameDayUTC (item.created, whenDayCreated)) { //it's in the days array ==> has not been deleted
 						return (true);
 						}
 					}
@@ -863,7 +901,7 @@ function publishBlog (jstruct, options, callback) {
 				}
 			}
 		else {
-			var htmltext = "", indentlevel = 0, daypath = utils.getDatePath (new Date (day.created), false), relpath = daypath + ".html", path = blogConfig.basePath + relpath;
+			var htmltext = "", indentlevel = 0, daypath = cmsGetDatePath (new Date (day.created), false), relpath = daypath + ".html", path = blogConfig.basePath + relpath;
 			var urlpage = blogConfig.baseUrl + relpath;
 			var daystring = getDayTitle (day.created); 
 			var pagetitle = blogConfig.title + ": " + daystring;
