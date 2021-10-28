@@ -1,4 +1,4 @@
-var myVersion = "0.7.0", myProductName = "oldSchool";    
+var myVersion = "0.7.2", myProductName = "oldSchool";    
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -324,13 +324,21 @@ function publishBlog (jstruct, options, callback) {
 		function pad (num) {
 			return (utils.padWithZeros (num, 2));
 			}
+		function typeIsStory (theType) {
+			switch (theType) {
+				case "outline": case "tweet":
+					return (true);
+				default:
+					return (false);
+				}
+			}
 		function visitStories (theNode, visit) {
 			function visitSubs (theNode) {
 				if (notComment (theNode)) {
 					if (theNode.subs !== undefined) {
 						theNode.subs.forEach (function (theSub) {
 							if (notComment (theSub)) {
-								if (theSub.type == "outline") {
+								if (typeIsStory (theSub.type)) {
 									visit (theSub);
 									}
 								else {
