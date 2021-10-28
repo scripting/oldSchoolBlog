@@ -1,9 +1,10 @@
-var myVersion = "0.6.30", myProductName = "oldSchool";    
+var myVersion = "0.7.0", myProductName = "oldSchool";    
 
 exports.init = init;
 exports.publishBlog = publishBlog;
 exports.getConfig = getConfig; //8/10/21 by DW
 exports.initBlog = initBlog; //8/10/21 by DW
+exports.getVersionInfo = getVersionInfo; //10/28/21 by DW
 
 const rss = require ("daverss");
 const s3 = require ("daves3");
@@ -242,15 +243,40 @@ function sameDayUTC (d1, d2) { //10/22/21 by DW
 	d2 = new Date (d2);
 	return ((d1.getUTCFullYear () == d2.getUTCFullYear ()) && (d1.getUTCMonth () == d2.getUTCMonth ()) && (d1.getUTCDate () == d2.getUTCDate ()));
 	}
+function getVersionInfo () { //10/28/21 by DW
+	return ({
+		myProductName, 
+		myVersion
+		});
+	}
 
 function publishBlog (jstruct, options, callback) {
 	var blogName = options.blogName; //8/14/17 by DW
 	var blogConfig = config.blogs [blogName];
 	var blogData = dataForBlogs [blogName]; //10/6/20 by DW
-	var daysArray = new Array (), now = new Date ();
+	var daysArray = new Array ();
+	var eventLog = { 
+		pagesPublished: new Array (),
+		pingsSent: new Array ()
+		};
+	var whenstart = new Date ();
 	
+	function addToPagesPublished (path) {
+		eventLog.pagesPublished.push (path);
+		}
+	function addToPingsSent (jstruct) {
+		eventLog.pingsSent.push (jstruct);
+		}
 	
-	function getBlogTime (when) { //10/22/21 by DW
+	function getTimeZoneOffset () {
+		if (blogConfig.timeZoneOffset === undefined) {
+			return (0);
+			}
+		else {
+			return (blogConfig.timeZoneOffset);
+			}
+		}
+	function getBlogTime (when) {  //10/26/21 by DW
 		function processTimeZoneString (s) { //convert someting like 5:30 to 5.5
 			var splits = s.split (":");
 			if (splits.length == 2) {
@@ -264,7 +290,7 @@ function publishBlog (jstruct, options, callback) {
 			return (s);
 			}
 		try {
-			var offset = Number (processTimeZoneString (blogConfig.timeZoneOffset));
+			var offset = Number (processTimeZoneString (getTimeZoneOffset ()));
 			var d = new Date (when);
 			var localTime = d.getTime ();
 			var localOffset = d.getTimezoneOffset () *  60000;
@@ -272,19 +298,83 @@ function publishBlog (jstruct, options, callback) {
 			var blogTime = utc + (3600000 * offset);
 			return (blogTime);
 			}
-		catch (err) {
-			return (when.getTime ());
+		catch (tryerror) {
+			return (new Date (when).getTime ());
 			}
 		}
+	function getBlogLocalDate (when=new Date ()) { //10/26/21 by DW
+		var millisecsSince1970 = getBlogTime (when, getTimeZoneOffset ()); //in local time
+		var jsBlogDate = new Date (millisecsSince1970);
+		return (jsBlogDate);
+		}
+	function getBlogDateInfo (when) { //10/26/21 by DW
+		var jsBlogDate = getBlogLocalDate (when, getTimeZoneOffset ());
+		var dateInfo = {
+			day: jsBlogDate.getDate (),
+			month: jsBlogDate.getMonth () + 1,
+			year: jsBlogDate.getFullYear (),
+			hour: jsBlogDate.getHours (),
+			minute: jsBlogDate.getMinutes (),
+			second: jsBlogDate.getSeconds ()
+			};
+		return (dateInfo);
+		}
+	function outlineToDaysArray (theOutline) { //10/26/21 by DW
+		var theStories = new Object ();
+		function pad (num) {
+			return (utils.padWithZeros (num, 2));
+			}
+		function visitStories (theNode, visit) {
+			function visitSubs (theNode) {
+				if (notComment (theNode)) {
+					if (theNode.subs !== undefined) {
+						theNode.subs.forEach (function (theSub) {
+							if (notComment (theSub)) {
+								if (theSub.type == "outline") {
+									visit (theSub);
+									}
+								else {
+									visitSubs (theSub);
+									}
+								}
+							});
+						}
+					}
+				}
+			visitSubs (theNode);
+			}
+		visitStories (theOutline.body, function (theStory) {
+			var dateInfo = getBlogDateInfo (theStory.created, theOutline.head.timeZoneOffset);
+			var datestring = dateInfo.year + "/" + pad (dateInfo.month) + "/" + pad (dateInfo.day);
+			if (theStories [datestring] === undefined) {
+				theStories [datestring] = new Array ();
+				}
+			theStories [datestring].push (theStory);
+			});
+		
+		//convert it to an array
+			var daysArray = new Array ();
+			function monthToString (theMonthNum) {
+				var names = ["", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+				return (names [theMonthNum]);
+				}
+			for (var x in theStories) {
+				let splits = x.split ("/");
+				daysArray.push ({
+					created: new Date (x),
+					flInCalendar: true,
+					name: splits [2],
+					path: x, //something like 2021/07/31
+					text: monthToString (Number (splits [1])) + " " + splits [2],
+					type: "calendarDay",
+					subs: theStories [x]
+					});
+				}
+		return (daysArray);
+		}
+	
 	function cmsDateFormat (when, pattern) { //10/13/21 by DW
-		try {
-			var newTime = getBlogTime (when);
-			var formattedDate = dateFormat (newTime, pattern);
-			return (formattedDate);
-			}
-		catch (tryerror) {
-			return (dateFormat (when, pattern));
-			}
+		return (dateFormat (when, pattern));
 		}
 	function cmsGetDatePath (theDate, flLastSeparator) { //10/22/21 by DW
 		if (theDate === undefined) {
@@ -330,22 +420,6 @@ function publishBlog (jstruct, options, callback) {
 				}
 			var d = new Date (when);
 			return ("a" + pad (d.getUTCHours ()) + pad (d.getUTCMinutes ()) + pad (d.getUTCSeconds ()));
-			}
-		}
-	function dayNotDeleted (whenDayCreated) { //8/30/21 by DW 
-		if (blogConfig.flOldSchoolUseCache) {
-			return (true);
-			}
-		else {
-			for (var i = 0; i < daysArray.length; i++) {
-				var item = daysArray [i];
-				if (item.created !== undefined) {
-					if (sameDayUTC (item.created, whenDayCreated)) { //it's in the days array ==> has not been deleted
-						return (true);
-						}
-					}
-				}
-			return (false);
 			}
 		}
 	function writeAndMirrorFile (localpath, s3relpath, s, type, callback) { //2/4/20 by DW
@@ -689,6 +763,22 @@ function publishBlog (jstruct, options, callback) {
 		add ("</ul>"); indentlevel--;
 		return (htmltext);
 		}
+	function dayNotDeleted (whenDayCreated) { //8/30/21 by DW 
+		if (blogConfig.flOldSchoolUseCache) {
+			return (true);
+			}
+		else {
+			for (var i = 0; i < daysArray.length; i++) {
+				var item = daysArray [i];
+				if (item.created !== undefined) {
+					if (sameDayUTC (item.created, whenDayCreated)) { //it's in the days array ==> has not been deleted
+						return (true);
+						}
+					}
+				}
+			return (false);
+			}
+		}
 	function publishThroughTemplate (relpath, pagetitle, metadata, htmltext, templatetext, addToConfig, callback) {
 		function getSocialMediaLinks () {
 			var htmltext = "", indentlevel = 0, head = blogConfig.jstruct.head;
@@ -788,8 +878,7 @@ function publishBlog (jstruct, options, callback) {
 				addImage (metadata.image);
 				}
 			if (metadata.body !== undefined) { //12/22/19 by DW
-				add ("<meta name=\"twitter:body\" content=\"" + new Buffer (metadata.body).toString ("base64") + "\">");
-				
+				add ("<meta name=\"twitter:body\" content=\"" + Buffer.from (metadata.body, "base64") + "\">");
 				}
 			else {
 				if (blogConfig.flIncludeImageInMetadata) { //6/27/17 by DW
@@ -840,13 +929,18 @@ function publishBlog (jstruct, options, callback) {
 			facebookmetadata: getFacebookMetadata (pagetitle, relpath),
 			socialMediaLinks: getSocialMediaLinks (),
 			rssLink: getRssLink (),
-			now: cmsDateFormat (now, "dddd mmmm d, yyyy; h:MM TT Z"),
+			now: cmsDateFormat (new Date (), "dddd mmmm d, yyyy; h:MM TT Z"),
 			generator: myProductName + " v" + myVersion, //11/4/20 by DW
 			configJson: getConfigJson (),
 			opmlHead: getOpmlHeadInJson (),
 			aboutOutline: getAboutOutlineInJson () //10/18/21 by DW
 			};
 		utils.copyScalars (blogConfig.jstruct.head, pagetable);
+		
+		if (pagetable.copyright === undefined) { //it's used in the default template
+			pagetable.copyright = "";
+			}
+		
 		if (templatetext === undefined) { //9/12/17 by DW
 			templatetext = blogConfig.templatetext; 
 			}
@@ -858,14 +952,12 @@ function publishBlog (jstruct, options, callback) {
 					}
 				if (blogConfig.flAlwaysBuildHomePage) {
 					if (relpath == config.indexHtmlFname) {
-						console.log ("mustRebuildPage: returning true because it's the index file.");
 						return (true);
 						}
 					else {
 						if (daysArray.length > 0) {
 							var homePathPrefix = utils.getDatePath (daysArray [0].created, false);
 							if (utils.beginsWith (relpath, homePathPrefix)) {
-								console.log ("mustRebuildPage: returning true because " + relpath + " is one of today's pages.");
 								return (true);
 								}
 							}
@@ -880,7 +972,7 @@ function publishBlog (jstruct, options, callback) {
 						debugMessage ("publishThroughTemplate: relpath == " + relpath + ", err.message == " + err.message);
 						}
 					else {
-						debugMessage ("published: " + blogConfig.baseUrl + relpath);
+						addToPagesPublished (relpath);
 						}
 					if (callback !== undefined) {
 						callback ();
@@ -901,7 +993,8 @@ function publishBlog (jstruct, options, callback) {
 				}
 			}
 		else {
-			var htmltext = "", indentlevel = 0, daypath = cmsGetDatePath (new Date (day.created), false), relpath = daypath + ".html", path = blogConfig.basePath + relpath;
+			var htmltext = "", indentlevel = 0;
+			var daypath = day.path, relpath = daypath + ".html", path = blogConfig.basePath + relpath;
 			var urlpage = blogConfig.baseUrl + relpath;
 			var daystring = getDayTitle (day.created); 
 			var pagetitle = blogConfig.title + ": " + daystring;
@@ -1025,7 +1118,7 @@ function publishBlog (jstruct, options, callback) {
 				}
 			}
 		}
-	function publishHomePage (callback) {
+	function publishHomePage (callback) { //xxx
 		function getEarliestDayInHtmlArchive () { //9/29/21 by DW
 			var earliestday = new Date ();
 			for (var x in blogData.htmlArchive) {
@@ -1042,7 +1135,9 @@ function publishBlog (jstruct, options, callback) {
 		var htmltext = "", pagetitle = blogConfig.title, ctDays = blogConfig.maxDaysOnHomePage, ctDaysOnHomePage = 0;
 		var newestDayOnHomePage = undefined, oldestDayOnHomePage = undefined; //10/17/19 by DW
 		var earliestDayInHtmlArchive = getEarliestDayInHtmlArchive ();
-		var theDay = new Date ();
+		
+		var theDay = new Date (); 
+		
 		while (true) {
 			if (theDay < earliestDayInHtmlArchive) {
 				break;
@@ -1073,7 +1168,7 @@ function publishBlog (jstruct, options, callback) {
 					debugMessage ("publishHomePage: path == " + path + ", err.message == " + err.message);
 					}
 				else {
-					debugMessage ("published: " + path);
+					addToPagesPublished (path);
 					}
 				if (callback !== undefined) {
 					callback ();
@@ -1081,21 +1176,79 @@ function publishBlog (jstruct, options, callback) {
 				});
 			});
 		}
-	function publishHomePageText (callback) { //9/9/17 by DW
-		var path = blogConfig.basePath + "homepage.html";
-		publishFile (path, htmltext, "text/html", "public-read", function (err, data) {
-			if (err) {
-				debugMessage ("pubFacebookRss: path == " + path + ", err.message == " + err.message);
+	
+	function newPublishHomePage (callback) { //10/26/21 by DW
+		var htmltext = "", ctDaysOnHomePage = 0;
+		var newestDayOnHomePage = undefined, oldestDayOnHomePage = undefined;
+		var earliestDayInHtmlArchive = getEarliestDayInHtmlArchive ();
+		function getEarliestDayInHtmlArchive () { //9/29/21 by DW
+			var earliestday = new Date ();
+			for (var x in blogData.htmlArchive) {
+				var splits = x.split ("/"); //x is something like 2021/08/09
+				if (splits.length == 3) {
+					var thisday = new Date (x);
+					if (thisday < earliestday) {
+						earliestday = thisday;
+						}
+					}
 				}
-			else {
-				debugMessage ("published: " + path);
-				ping (blogConfig.baseUrl + config.facebookRssFname);
+			return (earliestday);
+			}
+		
+		for (var i = 0; i < daysArray.length; i++) {
+			let day = daysArray [i], dayInArchive = blogData.htmlArchive [day.path];
+			htmltext += "<div class=\"divArchivePageDay\">" + dayInArchive.htmltext + "</div>\n";
+			if (newestDayOnHomePage === undefined) {
+				newestDayOnHomePage = day.created;
 				}
-			if (callback !== undefined) {
-				callback ();
+			oldestDayOnHomePage = day.created;
+			if (++ctDaysOnHomePage > blogConfig.maxDaysOnHomePage) {
+				break;
 				}
+			}
+		
+		if (ctDaysOnHomePage < blogConfig.maxDaysOnHomePage) { //there's room for more stuff, check the htmlcache
+			let theDay = utils.dateYesterday (oldestDayOnHomePage);
+			function pad (n) {
+				return (utils.padWithZeros (n, 2));
+				}
+			while (true) {
+				if (theDay < earliestDayInHtmlArchive) {
+					break;
+					}
+				let path = theDay.getFullYear () + "/" + pad (theDay.getMonth () + 1) + "/" + pad (theDay.getDay ());
+				let dayInArchive = blogData.htmlArchive [path];
+				if (dayInArchive !== undefined) {
+					htmltext += "<div class=\"divArchivePageDay\">" + dayInArchive.htmltext + "</div>\n";
+					oldestDayOnHomePage = theDay;
+					if (++ctDaysOnHomePage > blogConfig.maxDaysOnHomePage) {
+						break;
+						}
+					}
+				theDay = utils.dateYesterday (theDay);
+				}
+			}
+		
+		var addToConfig = {
+			flHomePage: true, //so JS code can tell that it should add the tabs
+			newestDayOnHomePage, oldestDayOnHomePage //10/17/19 by DW
+			};
+		publishThroughTemplate (config.indexHtmlFname, blogConfig.title, undefined, htmltext, blogConfig.homePageTemplatetext, addToConfig, function () {
+			var path = blogConfig.basePath + config.homeHtmlFname;
+			publishFile (path, htmltext, "text/html", "public-read", function (err, data) {
+				if (err) {
+					debugMessage ("newPublishHomePage: path == " + path + ", err.message == " + err.message);
+					}
+				else {
+					addToPagesPublished (path);
+					}
+				if (callback !== undefined) {
+					callback ();
+					}
+				});
 			});
 		}
+	
 	function publishMonthArchivePage (callback) {
 		var now = new Date (), relpath = now.getFullYear () + "/" + utils.padWithZeros (now.getMonth () + 1, 2) + "/" + config.indexHtmlFname;
 		var pagetitle = blogConfig.title + ": " + cmsDateFormat (now, "mmmm yyyy");
@@ -1173,7 +1326,7 @@ function publishBlog (jstruct, options, callback) {
 		function ping (urlFeed) {
 			if (blogConfig.flRssCloudEnabled && (blogConfig.rssCloudProtocol == "http-post")) {
 				var urlServer = "http://" + blogConfig.rssCloudDomain + ":" + blogConfig.rssCloudPort + blogConfig.rssPingPath;
-				debugMessage ("ping: urlServer == " + urlServer + ", urlFeed == " + urlFeed);
+				addToPingsSent ({urlServer, urlFeed});
 				rss.cloudPing (urlServer, urlFeed, function (err, res, body) {
 					if (flPingLogEnabled) {
 						var message = undefined, statusCode = undefined;
@@ -1212,7 +1365,7 @@ function publishBlog (jstruct, options, callback) {
 					debugMessage ("pubFacebookRss: path == " + path + ", err.message == " + err.message);
 					}
 				else {
-					debugMessage ("published: " + path);
+					addToPagesPublished (path);
 					ping (blogConfig.baseUrl + config.facebookRssFname);
 					}
 				if (callback !== undefined) {
@@ -1245,7 +1398,7 @@ function publishBlog (jstruct, options, callback) {
 					debugMessage ("publishRssFeed: path == " + path + ", err.message == " + err.message);
 					}
 				else {
-					debugMessage ("published: " + path);
+					addToPagesPublished (path);
 					ping (blogConfig.baseUrl + config.rssFname);
 					}
 				if (callback !== undefined) {
@@ -1261,7 +1414,7 @@ function publishBlog (jstruct, options, callback) {
 					debugMessage ("publishJsonFeed: path == " + path + ", err.message == " + err.message);
 					}
 				else {
-					debugMessage ("published: " + path);
+					addToPagesPublished (path);
 					ping (blogConfig.baseUrl + config.rssJsonFname);
 					pingForUser (); //8/17/17 by DW
 					}
@@ -1344,7 +1497,7 @@ function publishBlog (jstruct, options, callback) {
 				debugMessage ("publishHomeJson: path == " + path + ", err.message == " + err.message);
 				}
 			else {
-				debugMessage ("published: " + path);
+				addToPagesPublished (path);
 				}
 			if (callback !== undefined) {
 				callback ();
@@ -1443,7 +1596,6 @@ function publishBlog (jstruct, options, callback) {
 			});
 		}
 	function getHomePageTemplate (callback) { //9/12/17 by DW
-		debugMessage ("getHomePageTemplate: blogConfig.urlHomePageTemplate == " + blogConfig.urlHomePageTemplate);
 		if (blogConfig.urlHomePageTemplate !== undefined) {
 			httpReadUrl (blogConfig.urlHomePageTemplate, function (templatetext) {
 				blogConfig.homePageTemplatetext = templatetext;
@@ -1508,17 +1660,11 @@ function publishBlog (jstruct, options, callback) {
 		}
 	else {
 		setCalendarFlags (); //11/9/20 by DW
-		for (var i = 0; i < jstruct.body.subs.length; i++) {
-			var month = jstruct.body.subs [i];
-			if ((month.subs !== undefined) && notComment (month) && month.flInCalendar) { //11/5/20 by DW
-				for (var j = 0; j < month.subs.length; j++) {
-					var day = month.subs [j];
-					daysArray [daysArray.length] = day;
-					saveDay (day); ///6/10/17 by DW
-					saveDayInOpml (day); //1/16/21 by DW
-					}
-				}
-			}
+		daysArray = outlineToDaysArray (jstruct); //10/26/21 by DW
+		daysArray.forEach (function (day) {
+			saveDay (day); ///6/10/17 by DW
+			saveDayInOpml (day); //1/16/21 by DW
+			});
 		
 		blogConfig.jstruct = jstruct; //8/8/17 by DW
 		blogConfig.ownerFacebookAccount = jstruct.head.ownerFacebookAccount; //5/26/17 by DW
@@ -1544,13 +1690,13 @@ function publishBlog (jstruct, options, callback) {
 				getHomePageTemplate (function () {
 					getBlogTemplate (function () {
 						publishNextDay (0, function () { //callback runs when all daily pages have been built
-							publishHomePage ();
+							newPublishHomePage (); //xxx
 							publishMonthArchivePage ();
 							publishRssFeed ();
 							publishCustomPages ();
 							publishHomeJson (); //7/18/17 by DW
 							publishStandalonePages (); //11/9/20 by DW
-							debugMessage ("publishBlog: ctsecs == " + utils.secondsSince (now));
+							debugMessage ("publishBlog: ctsecs == " + utils.secondsSince (whenstart));
 							if (callback !== undefined) {
 								callback (blogConfig);
 								}
@@ -1631,7 +1777,6 @@ function initBlog (blogName, callback) {
 						}
 					}
 				}
-			console.log ("getBlogHtmlArchive:  html archive for blog " + blogName + " took " + utils.secondsSince (whenstart) + " seconds to load.");
 			if (callback !== undefined) {
 				callback ();
 				}
