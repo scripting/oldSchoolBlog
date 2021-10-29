@@ -1,4 +1,4 @@
-var myVersion = "0.7.2", myProductName = "oldSchool";    
+var myVersion = "0.7.3", myProductName = "oldSchool";    
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -166,7 +166,6 @@ function publishCalendarJson (blogConfig, blogData, callback) {
 			debugMessage ("publishCalendarJson: path == " + path + ", err.message == " + err.message);
 			}
 		else {
-			debugMessage ("published: " + blogConfig.baseUrl + config.calendarFname);
 			}
 		if (callback !== undefined) {
 			callback ();
@@ -326,7 +325,7 @@ function publishBlog (jstruct, options, callback) {
 			}
 		function typeIsStory (theType) {
 			switch (theType) {
-				case "outline": case "tweet":
+				case "outline": case "tweet": case "link":
 					return (true);
 				default:
 					return (false);
@@ -1126,66 +1125,8 @@ function publishBlog (jstruct, options, callback) {
 				}
 			}
 		}
-	function publishHomePage (callback) { //xxx
-		function getEarliestDayInHtmlArchive () { //9/29/21 by DW
-			var earliestday = new Date ();
-			for (var x in blogData.htmlArchive) {
-				var splits = x.split ("/"); //x is something like 2021/08/09
-				if (splits.length == 3) {
-					var thisday = new Date (x);
-					if (thisday < earliestday) {
-						earliestday = thisday;
-						}
-					}
-				}
-			return (earliestday);
-			}
-		var htmltext = "", pagetitle = blogConfig.title, ctDays = blogConfig.maxDaysOnHomePage, ctDaysOnHomePage = 0;
-		var newestDayOnHomePage = undefined, oldestDayOnHomePage = undefined; //10/17/19 by DW
-		var earliestDayInHtmlArchive = getEarliestDayInHtmlArchive ();
-		
-		var theDay = new Date (); 
-		
-		while (true) {
-			if (theDay < earliestDayInHtmlArchive) {
-				break;
-				}
-			if (dayNotDeleted (theDay)) { //8/30/21 by DW
-				var dayInArchive = blogData.htmlArchive [utils.getDatePath (theDay, false)];
-				if (dayInArchive !== undefined) {
-					htmltext += "<div class=\"divArchivePageDay\">" + dayInArchive.htmltext + "</div>";
-					if (newestDayOnHomePage === undefined) {
-						newestDayOnHomePage = theDay;
-						}
-					oldestDayOnHomePage = theDay;
-					if (++ctDaysOnHomePage > blogConfig.maxDaysOnHomePage) {
-						break;
-						}
-					}
-				}
-			theDay = utils.dateYesterday (theDay);
-			}
-		var addToConfig = {
-			flHomePage: true, //so JS code can tell that it should add the tabs
-			newestDayOnHomePage, oldestDayOnHomePage //10/17/19 by DW
-			};
-		publishThroughTemplate (config.indexHtmlFname, pagetitle, undefined, htmltext, blogConfig.homePageTemplatetext, addToConfig, function () {
-			var path = blogConfig.basePath + config.homeHtmlFname;
-			publishFile (path, htmltext, "text/html", "public-read", function (err, data) {
-				if (err) {
-					debugMessage ("publishHomePage: path == " + path + ", err.message == " + err.message);
-					}
-				else {
-					addToPagesPublished (path);
-					}
-				if (callback !== undefined) {
-					callback ();
-					}
-				});
-			});
-		}
 	
-	function newPublishHomePage (callback) { //10/26/21 by DW
+	function publishHomePage (callback) { //10/26/21 by DW
 		var htmltext = "", ctDaysOnHomePage = 0;
 		var newestDayOnHomePage = undefined, oldestDayOnHomePage = undefined;
 		var earliestDayInHtmlArchive = getEarliestDayInHtmlArchive ();
@@ -1216,7 +1157,7 @@ function publishBlog (jstruct, options, callback) {
 			}
 		
 		if (ctDaysOnHomePage < blogConfig.maxDaysOnHomePage) { //there's room for more stuff, check the htmlcache
-			let theDay = utils.dateYesterday (oldestDayOnHomePage);
+			let theDay = (oldestDayOnHomePage === undefined) ? getBlogLocalDate () : utils.dateYesterday (oldestDayOnHomePage);
 			function pad (n) {
 				return (utils.padWithZeros (n, 2));
 				}
@@ -1245,7 +1186,7 @@ function publishBlog (jstruct, options, callback) {
 			var path = blogConfig.basePath + config.homeHtmlFname;
 			publishFile (path, htmltext, "text/html", "public-read", function (err, data) {
 				if (err) {
-					debugMessage ("newPublishHomePage: path == " + path + ", err.message == " + err.message);
+					debugMessage ("publishHomePage: path == " + path + ", err.message == " + err.message);
 					}
 				else {
 					addToPagesPublished (path);
@@ -1698,7 +1639,7 @@ function publishBlog (jstruct, options, callback) {
 				getHomePageTemplate (function () {
 					getBlogTemplate (function () {
 						publishNextDay (0, function () { //callback runs when all daily pages have been built
-							newPublishHomePage (); //xxx
+							publishHomePage (); //xxx
 							publishMonthArchivePage ();
 							publishRssFeed ();
 							publishCustomPages ();
