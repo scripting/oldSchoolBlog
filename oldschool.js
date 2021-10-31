@@ -1,4 +1,4 @@
-var myVersion = "0.7.3", myProductName = "oldSchool";    
+var myVersion = "0.7.6", myProductName = "oldSchool";    
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -54,6 +54,14 @@ var config = { //defaults
 var dataForBlogs = { //10/6/20 by DW -- one for each blog
 	};
 
+function typeIsStory (theType) { //types that are recognized as blog items
+	switch (theType) {
+		case "outline": case "tweet": case "link": case "markdown":
+			return (true);
+		default:
+			return (false);
+		}
+	}
 function dateGreater (d1, d2) { //8/30/21 by DW
 	return (new Date (d1) > new Date (d2));
 	}
@@ -133,6 +141,12 @@ function markdownProcess (s) {
 		renderer: renderer
 		};
 	return (marked (s, options));
+	}
+function debugMarkdownText (theText) { //for debugging -- 10/30/21 by DW
+	theText = utils.replaceAll (theText, "\n", "\\n");
+	theText = utils.replaceAll (theText, "\t", "\\t");
+	theText = utils.replaceAll (theText, "\r", "\\r");
+	return (theText);
 	}
 function addDayToCalendar (blogData, theDay, url) {
 	var d = new Date (theDay);
@@ -248,6 +262,14 @@ function getVersionInfo () { //10/28/21 by DW
 		myVersion
 		});
 	}
+function getNodeType (theNode) { //10/29/21 by DW
+	if (theNode.type === undefined) {
+		return (undefined);
+		}
+	else {
+		return (theNode.type);
+		}
+	}
 
 function publishBlog (jstruct, options, callback) {
 	var blogName = options.blogName; //8/14/17 by DW
@@ -322,14 +344,6 @@ function publishBlog (jstruct, options, callback) {
 		var theStories = new Object ();
 		function pad (num) {
 			return (utils.padWithZeros (num, 2));
-			}
-		function typeIsStory (theType) {
-			switch (theType) {
-				case "outline": case "tweet": case "link":
-					return (true);
-				default:
-					return (false);
-				}
 			}
 		function visitStories (theNode, visit) {
 			function visitSubs (theNode) {
@@ -452,7 +466,6 @@ function publishBlog (jstruct, options, callback) {
 						});
 					if (blogConfig.flMirrorDataToS3) {
 						var s3path = blogConfig.basePathMirror + s3relpath;
-						console.log ("writeAndMirrorFile: s3path == " + s3path);
 						s3.newObject (s3path, s, type, undefined, function (err, data) {
 							if (err) {
 								debugMessage ("writeAndMirrorFile: s3path == " + s3path + ", err.message == " + err.message);
@@ -736,39 +749,66 @@ function publishBlog (jstruct, options, callback) {
 			}
 		return (atts);
 		}
-	function getItemSubs (parent, ulLevel, urlStoryPage) {
-		var htmltext = "", indentlevel = 0, ulAddedClass = "", ulCollapsedClass = "";
+	function subsToMarkdown (parent) { //10/30/21 by DW
+		let markdowntext = "", indentlevel = 0;
 		function add (s) {
-			htmltext += utils.filledString ("\t", indentlevel) + s + "\n";
+			markdowntext += s + "\n\n";
 			}
-		if (utils.getBoolean (parent.flNumberedSubs)) { //6/15/17 by DW
-			ulAddedClass = " ulNumberedSubs";
+		function addlevel (theNode) {
+			if (theNode.subs !== undefined) {
+				theNode.subs.forEach (function (sub) {
+					add (sub.text);
+					indentlevel++;
+					addlevel (sub);
+					indentlevel--;
+					});
+				}
+			}
+		addlevel (parent);
+		var processedtext = "<span class=\"spMarkdownText\">" + markdownProcess (markdowntext) + "</span>";
+		console.log ("getItemSubs: markdowntext == " + debugMarkdownText (markdowntext));
+		console.log ("getItemSubs: processedtext == " + debugMarkdownText (processedtext));
+		return (processedtext);
+		}
+	function getItemSubs (parent, ulLevel, urlStoryPage) {
+		if (getNodeType (parent) == "markdown") {
+			return (subsToMarkdown (parent));
 			}
 		else {
-			if (utils.getBoolean (parent.flBulletedSubs)) { //5/15/18 by DW
-				ulAddedClass = " ulBulletedSubs";
+			let htmltext = "", indentlevel = 0;
+			function add (s) {
+				htmltext += utils.filledString ("\t", indentlevel) + s + "\n";
+				}
+			var ulAddedClass = "", ulCollapsedClass = "";
+			if (utils.getBoolean (parent.flNumberedSubs)) { //6/15/17 by DW
+				ulAddedClass = " ulNumberedSubs";
 				}
 			else {
-				if (utils.getBoolean (parent.flCodeSubs)) { //4/24/20 by DW
-					ulAddedClass = " ulCodeSubs";
+				if (utils.getBoolean (parent.flBulletedSubs)) { //5/15/18 by DW
+					ulAddedClass = " ulBulletedSubs";
+					}
+				else {
+					if (utils.getBoolean (parent.flCodeSubs)) { //4/24/20 by DW
+						ulAddedClass = " ulCodeSubs";
+						}
 					}
 				}
-			}
-		if (utils.getBoolean (parent.collapse)) { //5/15/18 by DW
-			ulCollapsedClass = " ulCollapsed";
-			}
-		add ("<ul class=\"ulLevel" + ulLevel + ulAddedClass + ulCollapsedClass + "\">"); indentlevel++;
-		for (var i = 0; i < parent.subs.length; i++) {
-			var item = parent.subs [i];
-			if (notComment (item)) { //11/5/20 by DW
-				add ("<li" + getDataAtts (item) + ">" + getRenderedText (item, undefined, urlStoryPage) + "</li>");
-				if (item.subs !== undefined) {
-					add (getItemSubs (item, ulLevel + 1, urlStoryPage));
+			if (utils.getBoolean (parent.collapse)) { //5/15/18 by DW
+				ulCollapsedClass = " ulCollapsed";
+				}
+			add ("<ul class=\"ulLevel" + ulLevel + ulAddedClass + ulCollapsedClass + "\">"); indentlevel++;
+			for (var i = 0; i < parent.subs.length; i++) {
+				var item = parent.subs [i];
+				if (notComment (item)) { //11/5/20 by DW
+					add ("<li" + getDataAtts (item) + ">" + getRenderedText (item, undefined, urlStoryPage) + "</li>");
+					if (item.subs !== undefined) {
+						add (getItemSubs (item, ulLevel + 1, urlStoryPage));
+						}
 					}
 				}
+			add ("</ul>"); indentlevel--;
+			return (htmltext);
 			}
-		add ("</ul>"); indentlevel--;
-		return (htmltext);
 		}
 	function dayNotDeleted (whenDayCreated) { //8/30/21 by DW 
 		if (blogConfig.flOldSchoolUseCache) {
@@ -1548,7 +1588,6 @@ function publishBlog (jstruct, options, callback) {
 		if (blogConfig.urlHomePageTemplate !== undefined) {
 			httpReadUrl (blogConfig.urlHomePageTemplate, function (templatetext) {
 				blogConfig.homePageTemplatetext = templatetext;
-				debugMessage ("getHomePageTemplate: blogConfig.homePageTemplatetext.length == " + blogConfig.homePageTemplatetext.length);
 				if (callback !== undefined) {
 					callback ();
 					}
@@ -1561,13 +1600,19 @@ function publishBlog (jstruct, options, callback) {
 			}
 		}
 	function getBlogGlossary (callback) {
+		blogConfig.glossary = new Object ();
 		if (blogConfig.urlGlossaryOpml !== undefined) {
 			httpReadOutline (blogConfig.urlGlossaryOpml, function (err, theOutline) {
-				blogConfig.glossary = new Object ();
 				if (!err) {
 					for (i = 0; i < theOutline.opml.body.subs.length; i++) {
 						var item = theOutline.opml.body.subs [i];
-						blogConfig.glossary [item.text] = item.subs [0].text;
+						if (item.text.length > 0) { //10/31/21 by DW
+							if (item.subs !== undefined) {
+								if (item.subs.length > 0) {
+									blogConfig.glossary [item.text] = item.subs [0].text;
+									}
+								}
+							}
 						}
 					}
 				if (callback !== undefined) {
@@ -1576,7 +1621,6 @@ function publishBlog (jstruct, options, callback) {
 				});
 			}
 		else {
-			blogConfig.glossary = new Object ();
 			if (callback !== undefined) {
 				callback ();
 				}
@@ -1799,9 +1843,6 @@ function init (configParam, callback) {
 					try {
 						var parsedUrl = urlpack.parse (httpRequest.url, true), now = new Date ();
 						var lowerpath = parsedUrl.pathname.toLowerCase ();
-						
-						debugMessage ("httpServer: " + lowerpath);
-						
 						switch (httpRequest.method) {
 							case "GET":
 								switch (lowerpath) {
