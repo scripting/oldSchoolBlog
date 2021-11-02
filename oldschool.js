@@ -1,4 +1,4 @@
-var myVersion = "0.7.6", myProductName = "oldSchool";    
+var myVersion = "0.7.9", myProductName = "oldSchool";    
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -283,6 +283,7 @@ function publishBlog (jstruct, options, callback) {
 	var whenstart = new Date ();
 	
 	function addToPagesPublished (path) {
+		debugMessage ("published: " + path);
 		eventLog.pagesPublished.push (path);
 		}
 	function addToPingsSent (jstruct) {
@@ -1205,7 +1206,7 @@ function publishBlog (jstruct, options, callback) {
 				if (theDay < earliestDayInHtmlArchive) {
 					break;
 					}
-				let path = theDay.getFullYear () + "/" + pad (theDay.getMonth () + 1) + "/" + pad (theDay.getDay ());
+				let path = theDay.getFullYear () + "/" + pad (theDay.getMonth () + 1) + "/" + pad (theDay.getDate ());
 				let dayInArchive = blogData.htmlArchive [path];
 				if (dayInArchive !== undefined) {
 					htmltext += "<div class=\"divArchivePageDay\">" + dayInArchive.htmltext + "</div>\n";
@@ -1229,7 +1230,7 @@ function publishBlog (jstruct, options, callback) {
 					debugMessage ("publishHomePage: path == " + path + ", err.message == " + err.message);
 					}
 				else {
-					addToPagesPublished (path);
+					addToPagesPublished (config.homeHtmlFname);
 					}
 				if (callback !== undefined) {
 					callback ();
@@ -1354,7 +1355,7 @@ function publishBlog (jstruct, options, callback) {
 					debugMessage ("pubFacebookRss: path == " + path + ", err.message == " + err.message);
 					}
 				else {
-					addToPagesPublished (path);
+					addToPagesPublished (config.facebookRssFname);
 					ping (blogConfig.baseUrl + config.facebookRssFname);
 					}
 				if (callback !== undefined) {
@@ -1387,7 +1388,7 @@ function publishBlog (jstruct, options, callback) {
 					debugMessage ("publishRssFeed: path == " + path + ", err.message == " + err.message);
 					}
 				else {
-					addToPagesPublished (path);
+					addToPagesPublished (config.rssFname);
 					ping (blogConfig.baseUrl + config.rssFname);
 					}
 				if (callback !== undefined) {
@@ -1403,7 +1404,7 @@ function publishBlog (jstruct, options, callback) {
 					debugMessage ("publishJsonFeed: path == " + path + ", err.message == " + err.message);
 					}
 				else {
-					addToPagesPublished (path);
+					addToPagesPublished (config.rssJsonFname);
 					ping (blogConfig.baseUrl + config.rssJsonFname);
 					pingForUser (); //8/17/17 by DW
 					}
@@ -1486,7 +1487,7 @@ function publishBlog (jstruct, options, callback) {
 				debugMessage ("publishHomeJson: path == " + path + ", err.message == " + err.message);
 				}
 			else {
-				addToPagesPublished (path);
+				addToPagesPublished (config.indexJsonFname);
 				}
 			if (callback !== undefined) {
 				callback ();
@@ -1683,16 +1684,22 @@ function publishBlog (jstruct, options, callback) {
 				getHomePageTemplate (function () {
 					getBlogTemplate (function () {
 						publishNextDay (0, function () { //callback runs when all daily pages have been built
-							publishHomePage (); //xxx
-							publishMonthArchivePage ();
-							publishRssFeed ();
-							publishCustomPages ();
-							publishHomeJson (); //7/18/17 by DW
-							publishStandalonePages (); //11/9/20 by DW
-							debugMessage ("publishBlog: ctsecs == " + utils.secondsSince (whenstart));
-							if (callback !== undefined) {
-								callback (blogConfig);
-								}
+							publishHomePage (function () {
+								publishMonthArchivePage (function () {
+									publishRssFeed (function () {
+										publishCustomPages (function () {
+											publishHomeJson (function () { //7/18/17 by DW
+												publishStandalonePages (function () { //11/9/20 by DW
+													debugMessage ("publishBlog: ctsecs == " + utils.secondsSince (whenstart));
+													if (callback !== undefined) {
+														callback (blogConfig, eventLog);
+														}
+													});
+												});
+											});
+										});
+									});
+								});
 							});
 						});
 					});

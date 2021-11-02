@@ -1,7 +1,7 @@
 {
 	"name": "oldschoolblog", 
 	"description": "Blogging in the ways of ye old school.",
-	"version": "0.7.6",
+	"version": "0.7.9",
 	"author": "Dave Winer <dave@scripting.com>",
 	"license": "MIT",
 	"repository": {
@@ -16,7 +16,7 @@
 		"request": "*",
 		"nodejs-websocket": "*",
 		"dateformat": "4.5.1",
-		"marked": "*",
+		"marked": "3.0.8",
 		"node-emoji": "*",
 		"daverss": "*",
 		"daves3": "*", 
