@@ -8,6 +8,10 @@ I wrote a <a href="http://scripting.com/2019/06/02/150411.html">blog post</a> on
 
 ### Updates
 
+#### v0.7.10 --11/10/21 by DW
+
+twitter:body was an <a href="http://scripting.com/2019/12/17/151033.html">experiment</a>, as far as I know nothing is using it. And it's putting random garbage in pages. I don't have time to figure out what's going wrong, so I've commented out the feature. 
+
 #### v0.6.30 --10/22/21 by DW
 
 Two time zone fixes. Had to implement new versions of utils.sameDay and utils.getDatePath that take UTC and the user's local time into account. Full details <a href="https://github.com/scripting/drummerSupport/issues/88">here</a>. Thanks to Amit Gawande for his patience in dealing with these problems from India. 

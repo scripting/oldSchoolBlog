@@ -1,4 +1,4 @@
-var myVersion = "0.7.9", myProductName = "oldSchool";    
+var myVersion = "0.7.10", myProductName = "oldSchool";    
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -924,9 +924,6 @@ function publishBlog (jstruct, options, callback) {
 			add ("<meta name=\"twitter:description\" content=\"" + metadata.description + "\">");
 			if (metadata.image !== undefined) { //11/30/19 by DW
 				addImage (metadata.image);
-				}
-			if (metadata.body !== undefined) { //12/22/19 by DW
-				add ("<meta name=\"twitter:body\" content=\"" + Buffer.from (metadata.body, "base64") + "\">");
 				}
 			else {
 				if (blogConfig.flIncludeImageInMetadata) { //6/27/17 by DW
