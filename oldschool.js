@@ -1,4 +1,4 @@
-var myVersion = "0.7.11", myProductName = "oldSchool";    
+var myVersion = "0.7.12", myProductName = "oldSchool";    
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -643,6 +643,16 @@ function publishBlog (jstruct, options, callback) {
 			}
 		return (s);
 		}
+	function getImageHtml (item) { //11/12/21 by DW
+		var imgHtml = "";
+		if (item.image !== undefined) {
+			imgHtml = "<img class=\"imgRightMargin\" src=\"" + item.image + "\" border=\"0\" style=\"float: right; padding-left: 25px; padding-bottom: 10px; padding-top: 10px; padding-right: 15px;\">";
+			if (item.imageLink !== undefined) { //5/26/20 by DW
+				imgHtml = "<a class=\"anchorRightMargin\" href=\"" + item.imageLink + "\">" + imgHtml + "</a>";
+				}
+			}
+		return (imgHtml);
+		}
 	function processText (s) { //9/2/20 by DW -- all text processing code in one call
 		const macroOptions = {
 			startChars: "[%",
@@ -679,6 +689,7 @@ function publishBlog (jstruct, options, callback) {
 		var videotext = "<iframe width=\"560\" height=\"315\" src=\"" + url + "\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\" allowfullscreen></iframe>";
 		return ("<center>" + videotext + "</center>" + s);
 		}
+	
 	function getRenderedText (item, flTextIsTitle, urlStoryPage) {
 		var s = processText (item.text), flInlineImage = false;
 		if (item.inlineImage !== undefined) { //1/2/20 by DW
@@ -719,13 +730,7 @@ function publishBlog (jstruct, options, callback) {
 				}
 			}
 		
-		var imgHtml = "";
-		if (item.image !== undefined) {
-			imgHtml = "<img class=\"imgRightMargin\" src=\"" + item.image + "\" border=\"0\" style=\"float: right; padding-left: 25px; padding-bottom: 10px; padding-top: 10px; padding-right: 15px;\">";
-			if (item.imageLink !== undefined) { //5/26/20 by DW
-				imgHtml = "<a class=\"anchorRightMargin\" href=\"" + item.imageLink + "\">" + imgHtml + "</a>";
-				}
-			}
+		var imgHtml = getImageHtml (item); //11/12/21 by DW
 		
 		if (flTextIsTitle) {
 			s = "<a href=\"" + item.permalink + "\"><span class=\"spTitleLink\">" + s + "</span></a>";
@@ -1272,12 +1277,13 @@ function publishBlog (jstruct, options, callback) {
 			function visit (parent) {
 				for (var i = 0; i < parent.subs.length; i++) {
 					var item = parent.subs [i], text = processText (item.text);
+					var imgHtml = getImageHtml (item); //11/12/21 by DW
 					
 					if (indentlevel == 0) {
-						add ("<p>" + text + "</p>");
+						add ("<p>" + imgHtml + text + "</p>");
 						}
 					else {
-						add ("<li>" + text + "</li>");
+						add ("<li>" + imgHtml + text + "</li>");
 						}
 					
 					if (item.subs !== undefined) {
@@ -1426,7 +1432,7 @@ function publishBlog (jstruct, options, callback) {
 					var item = day.subs [j], obj = new Object ();
 					if (notComment (item)) { //11/6/20 by DW
 						if (item.subs === undefined) {
-							obj.text = processText (item.text);
+							obj.text = getImageHtml (item) + processText (item.text); //11/12/21 by DW
 							if (item.inlineImage !== undefined) { //1/13/20 by DW
 								obj.text = "<div class=\"divInlineImage\">" + addInlineImageTo (obj.text, item.inlineImage) + "</div>";
 								}

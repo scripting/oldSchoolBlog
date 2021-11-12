@@ -8,6 +8,12 @@ I wrote a <a href="http://scripting.com/2019/06/02/150411.html">blog post</a> on
 
 ### Updates
 
+#### v0.7.12 --11/10/21 by DW
+
+We no longer require a type att on top level posts. <a href="http://scripting.com/drummer/blog/2021/11/12/161023.html?title=nodesWoTypesInBlogs">Details</a>.
+
+RSS feeds now include the image attached to a headline, if present. 
+
 #### v0.7.10 --11/10/21 by DW
 
 twitter:body was an <a href="http://scripting.com/2019/12/17/151033.html">experiment</a>, as far as I know nothing is using it. And it's putting random garbage in pages. I don't have time to figure out what's going wrong, so I've commented out the feature. 
