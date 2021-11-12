@@ -1,4 +1,4 @@
-var myVersion = "0.7.10", myProductName = "oldSchool";    
+var myVersion = "0.7.11", myProductName = "oldSchool";    
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -341,6 +341,7 @@ function publishBlog (jstruct, options, callback) {
 			};
 		return (dateInfo);
 		}
+	
 	function outlineToDaysArray (theOutline) { //10/26/21 by DW
 		var theStories = new Object ();
 		function pad (num) {
@@ -356,7 +357,12 @@ function publishBlog (jstruct, options, callback) {
 									visit (theSub);
 									}
 								else {
-									visitSubs (theSub);
+									if (theNode.type == "calendarDay") { //11/12/21 by DW -- the sub's parent is a calendarDay type
+										visit (theSub);
+										}
+									else {
+										visitSubs (theSub);
+										}
 									}
 								}
 							});
