@@ -8,6 +8,12 @@ I wrote a <a href="http://scripting.com/2019/06/02/150411.html">blog post</a> on
 
 ### Updates
 
+#### v0.7.14 --11/19/21 by DW
+
+When proccessing titled posts with type markdown, only emit one newline per headline. We were emitting two. 
+
+This <a href="https://github.com/scripting/drummerRFC/issues/14#issuecomment-974157255">seems</a> more compatible with the Markdown philosophy. 
+
 #### v0.7.12 --11/10/21 by DW
 
 We no longer require a type att on top level posts. <a href="http://scripting.com/drummer/blog/2021/11/12/161023.html?title=nodesWoTypesInBlogs">Details</a>.

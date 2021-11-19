@@ -1,4 +1,4 @@
-var myVersion = "0.7.12", myProductName = "oldSchool";    
+var myVersion = "0.7.14", myProductName = "oldSchool";    
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -764,7 +764,7 @@ function publishBlog (jstruct, options, callback) {
 	function subsToMarkdown (parent) { //10/30/21 by DW
 		let markdowntext = "", indentlevel = 0;
 		function add (s) {
-			markdowntext += s + "\n\n";
+			markdowntext += s + "\n";
 			}
 		function addlevel (theNode) {
 			if (theNode.subs !== undefined) {
