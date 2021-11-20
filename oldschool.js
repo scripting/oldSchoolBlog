@@ -1,4 +1,4 @@
-var myVersion = "0.7.14", myProductName = "oldSchool";    
+var myVersion = "0.7.15", myProductName = "oldSchool";    
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -134,11 +134,7 @@ function emojiProcess (s) {
 	}
 function markdownProcess (s) {
 	var renderer = new marked.Renderer ();
-	renderer.paragraph = function (s) {
-		return (s);
-		};
 	var options = {
-		renderer: renderer
 		};
 	return (marked (s, options));
 	}
@@ -777,10 +773,10 @@ function publishBlog (jstruct, options, callback) {
 				}
 			}
 		addlevel (parent);
-		var processedtext = "<span class=\"spMarkdownText\">" + markdownProcess (markdowntext) + "</span>";
+		var processedtext = markdownProcess (markdowntext);
 		console.log ("getItemSubs: markdowntext == " + debugMarkdownText (markdowntext));
 		console.log ("getItemSubs: processedtext == " + debugMarkdownText (processedtext));
-		return (processedtext);
+		return ("<span class=\"spMarkdownText\">" + processedtext + "</span>");
 		}
 	function getItemSubs (parent, ulLevel, urlStoryPage) {
 		if (getNodeType (parent) == "markdown") {
