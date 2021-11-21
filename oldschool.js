@@ -1,4 +1,4 @@
-var myVersion = "0.7.15", myProductName = "oldSchool";    
+var myVersion = "0.7.16", myProductName = "oldSchool";    
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -132,11 +132,20 @@ function emojiProcess (s) {
 		}
 	return (emoji.emojify (s, undefined, addSpan));
 	}
-function markdownProcess (s) {
+function markdownProcess (s, flGenerateHtmlParagraphs=false) {
 	var renderer = new marked.Renderer ();
 	var options = {
+		renderer: renderer
 		};
-	return (marked (s, options));
+	if (flGenerateHtmlParagraphs) {
+		return (marked (s, options));
+		}
+	else {
+		renderer.paragraph = function (s) {
+			return (s);
+			};
+		return (marked (s, options));
+		}
 	}
 function debugMarkdownText (theText) { //for debugging -- 10/30/21 by DW
 	theText = utils.replaceAll (theText, "\n", "\\n");
@@ -685,7 +694,6 @@ function publishBlog (jstruct, options, callback) {
 		var videotext = "<iframe width=\"560\" height=\"315\" src=\"" + url + "\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\" allowfullscreen></iframe>";
 		return ("<center>" + videotext + "</center>" + s);
 		}
-	
 	function getRenderedText (item, flTextIsTitle, urlStoryPage) {
 		var s = processText (item.text), flInlineImage = false;
 		if (item.inlineImage !== undefined) { //1/2/20 by DW
@@ -757,6 +765,7 @@ function publishBlog (jstruct, options, callback) {
 			}
 		return (atts);
 		}
+	
 	function subsToMarkdown (parent) { //10/30/21 by DW
 		let markdowntext = "", indentlevel = 0;
 		function add (s) {
@@ -773,11 +782,12 @@ function publishBlog (jstruct, options, callback) {
 				}
 			}
 		addlevel (parent);
-		var processedtext = markdownProcess (markdowntext);
+		var processedtext = markdownProcess (markdowntext, true); 
 		console.log ("getItemSubs: markdowntext == " + debugMarkdownText (markdowntext));
 		console.log ("getItemSubs: processedtext == " + debugMarkdownText (processedtext));
-		return ("<span class=\"spMarkdownText\">" + processedtext + "</span>");
+		return ("<div class=\"divMarkdownText\">" + processedtext + "</div>");
 		}
+	
 	function getItemSubs (parent, ulLevel, urlStoryPage) {
 		if (getNodeType (parent) == "markdown") {
 			return (subsToMarkdown (parent));

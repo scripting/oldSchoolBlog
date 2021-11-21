@@ -8,6 +8,12 @@ I wrote a <a href="http://scripting.com/2019/06/02/150411.html">blog post</a> on
 
 ### Updates
 
+#### v0.7.16 --11/21/21 by DW
+
+Fixed a bug where we would generate an HTML &lt;p> for a singular post that had type markdown. This would cause the purple pound sign to appear below the headline, instead of to the right of the headline, in the rendering.
+
+For titled posts of type markdown, enclose the generated markdown text in a div not a span, because that's what it is. The type is divMarkdownText.
+
 #### v0.7.14 --11/19/21 by DW
 
 When proccessing titled posts with type markdown, only emit one newline per headline. We were emitting two. 
