@@ -8,6 +8,16 @@ I wrote a <a href="http://scripting.com/2019/06/02/150411.html">blog post</a> on
 
 ### Updates
 
+#### v0.7.21 -- 7/23/22 by DW
+
+We weren't generating inlineImages in the RSS feed if the image was part of a titled item, and in my use of inlineImages they always are. 
+
+#### v0.7.20 -- 11/23/21 by DW
+
+When processing Markdown nodes, the normal thing is double-spacing, but there is a way get parts of the text to go out single-spaced. 
+
+Documented <a href="http://scripting.com/2021/11/23/192342.html?title=nextIterationOnMarkdowninanoutline">here</a>. 
+
 #### v0.7.16 --11/21/21 by DW
 
 Fixed a bug where we would generate an HTML &lt;p> for a singular post that had type markdown. This would cause the purple pound sign to appear below the headline, instead of to the right of the headline, in the rendering.

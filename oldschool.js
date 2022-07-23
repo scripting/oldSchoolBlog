@@ -1,4 +1,4 @@
-var myVersion = "0.7.16", myProductName = "oldSchool";    
+var myVersion = "0.7.21", myProductName = "oldSchool";     
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -768,23 +768,33 @@ function publishBlog (jstruct, options, callback) {
 	
 	function subsToMarkdown (parent) { //10/30/21 by DW
 		let markdowntext = "", indentlevel = 0;
-		function add (s) {
-			markdowntext += s + "\n";
-			}
-		function addlevel (theNode) {
+		function addlevel (theNode, flSinglespace=false) {
+			var flAddExtraReturn = false;
+			function add (s) {
+				markdowntext += s + ((flSinglespace) ? "\n" : "\n\n");
+				}
+			if (theNode.flSinglespaceMarkdown !== undefined) {
+				var newSingleVal = utils.getBoolean (theNode.flSinglespaceMarkdown);
+				if (newSingleVal && (!flSinglespace)) {
+					flAddExtraReturn = true;
+					}
+				flSinglespace = newSingleVal;
+				}
 			if (theNode.subs !== undefined) {
 				theNode.subs.forEach (function (sub) {
 					add (sub.text);
 					indentlevel++;
-					addlevel (sub);
+					addlevel (sub, flSinglespace);
 					indentlevel--;
 					});
+				if (flAddExtraReturn) {
+					markdowntext += "\n";
+					}
 				}
 			}
 		addlevel (parent);
+		markdowntext = processText (markdowntext); //convert glossary references, emoji shortcodes, etc
 		var processedtext = markdownProcess (markdowntext, true); 
-		console.log ("getItemSubs: markdowntext == " + debugMarkdownText (markdowntext));
-		console.log ("getItemSubs: processedtext == " + debugMarkdownText (processedtext));
 		return ("<div class=\"divMarkdownText\">" + processedtext + "</div>");
 		}
 	
@@ -901,7 +911,7 @@ function publishBlog (jstruct, options, callback) {
 		function getOpmlHeadInJson () {
 			return (utils.jsonStringify (blogConfig.jstruct.head));
 			}
-		function getAboutOutlineInJson () { //10/18/21 by DW -- xxx
+		function getAboutOutlineInJson () { //10/18/21 by DW
 			if ((blogConfig.aboutOutline !== undefined) && (relpath == config.indexHtmlFname)) {
 				return (utils.jsonStringify (blogConfig.aboutOutline));
 				}
@@ -1285,11 +1295,16 @@ function publishBlog (jstruct, options, callback) {
 					var item = parent.subs [i], text = processText (item.text);
 					var imgHtml = getImageHtml (item); //11/12/21 by DW
 					
+					var objtext = imgHtml + text; //7/23/22 by DW
+					if (item.inlineImage !== undefined) { //7/23/22 by DW
+						objtext = "<div class=\"divInlineImage\">" + addInlineImageTo (text, item.inlineImage) + "</div>";
+						}
+					
 					if (indentlevel == 0) {
-						add ("<p>" + imgHtml + text + "</p>");
+						add ("<p>" + objtext + "</p>");
 						}
 					else {
-						add ("<li>" + imgHtml + text + "</li>");
+						add ("<li>" + objtext + "</li>");
 						}
 					
 					if (item.subs !== undefined) {

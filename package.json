@@ -1,7 +1,7 @@
 {
-	"name": "oldschoolblog", 
+	"name": "oldschoolblog",
 	"description": "Blogging in the ways of ye old school.",
-	"version": "0.7.16",
+	"version": "0.7.21",
 	"author": "Dave Winer <dave@scripting.com>",
 	"license": "MIT",
 	"repository": {

@@ -5,7 +5,8 @@
 			"link": "http://bloatware.org/users/kim/",
 			"description": "I work for Bloatware, the best company in the world, now that I'm there!",
 			
-			"urlJson": "http://electricserver.scripting.com/users/davewiner/electric/blog.json",
+			
+			"urlJson": "http://drummer.scripting.com/davewiner/blog.json",
 			
 			"basePath": "/bloatware.org/users/kim/",
 			"basePathItems": "/bloatware.org/users/kim/items/",
