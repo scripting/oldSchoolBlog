@@ -16,9 +16,9 @@ We added the info back to the &lt;link> element.
 
 Here's an example of a corrected feed item. 
 
-&lt;link>http://data.feedland.org/changenotes/2022/11/07/231800.html?title=yourFeedInFeedland&lt;/link>
+&lt;link>http://data.feedland.org/changenotes/2022/11/07/231800.html?title=yourFeedInFeedland</link>
 
-&lt;guid>http://data.feedland.org/changenotes/2022/11/07/231800.html&lt;/guid>
+&lt;guid>http://data.feedland.org/changenotes/2022/11/07/231800.html</guid>
 
 #### v0.7.21 -- 10/31/22 by DW
 
