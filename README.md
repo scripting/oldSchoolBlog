@@ -8,6 +8,22 @@ I wrote a <a href="http://scripting.com/2019/06/02/150411.html">blog post</a> on
 
 ### Updates
 
+#### v0.7.23 -- 11/7/22 by DW
+
+We were generating item guids with the title of the post as part of the URL. This means when you change the title, you create a new item in the flow. Commented the code out that does this. 
+
+We added the info back to the &lt;link> element. 
+
+Here's an example of a corrected feed item. 
+
+&lt;link>http://data.feedland.org/changenotes/2022/11/07/231800.html?title=yourFeedInFeedland&lt;/link>
+
+&lt;guid>http://data.feedland.org/changenotes/2022/11/07/231800.html&lt;/guid>
+
+#### v0.7.21 -- 10/31/22 by DW
+
+If we're using urlOpml instead of urlJson, we were using an outline that was the incorrect format for Old School. We fix it so it's the right format.
+
 #### v0.7.21 -- 7/23/22 by DW
 
 We weren't generating inlineImages in the RSS feed if the image was part of a titled item, and in my use of inlineImages they always are. 

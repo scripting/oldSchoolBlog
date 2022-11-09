@@ -1,4 +1,4 @@
-var myVersion = "0.7.21", myProductName = "oldSchool";     
+var myVersion = "0.7.24", myProductName = "oldSchool";     
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -727,7 +727,6 @@ function publishBlog (jstruct, options, callback) {
 		else {
 			if (item.subs !== undefined) { //12/29/17 by DW
 				item.permalink = blogConfig.baseUrl + utils.getDatePath (new Date (item.created), true) + utils.stringDelete (ourLink, 1, 1) + ".html";
-				item.permalink += "?title=" + utils.innerCaseName (item.text); //1/7/20 by DW
 				}
 			else {
 				item.permalink = urlpage + "#" + ourLink;
@@ -1452,6 +1451,7 @@ function publishBlog (jstruct, options, callback) {
 				for (var j = 0; j < day.subs.length; j++) {
 					var item = day.subs [j], obj = new Object ();
 					if (notComment (item)) { //11/6/20 by DW
+						let addToLink = ""; //11/7/22 by DW
 						if (item.subs === undefined) {
 							obj.text = getImageHtml (item) + processText (item.text); //11/12/21 by DW
 							if (item.inlineImage !== undefined) { //1/13/20 by DW
@@ -1461,9 +1461,10 @@ function publishBlog (jstruct, options, callback) {
 						else {
 							obj.title = item.text;
 							obj.text = getSubsText (item);
+							addToLink = "?title=" + utils.innerCaseName (item.text); //11/7/22 by DW
 							}
 						obj.outline = processOutline (item); //5/12/17 by DW
-						obj.link = item.permalink;
+						obj.link = item.permalink + addToLink;
 						obj.pubDate = item.created;
 						obj.guid = {flPermalink: true, value: item.permalink};
 						obj.when = item.created;
@@ -1859,6 +1860,13 @@ function init (configParam, callback) {
 									callback (undefined);
 									}
 								else {
+									if (theOutline.opml !== undefined) { //10/31/22 by DW
+										let newOutline = {
+											head: theOutline.opml.head,
+											body: theOutline.opml.body
+											};
+										theOutline = newOutline;
+										}
 									callback (utils.jsonStringify (theOutline));
 									}
 								});
