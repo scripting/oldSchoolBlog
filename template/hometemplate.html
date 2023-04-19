@@ -46,8 +46,10 @@
 		<script src="//scripting.com/chat/code/chatapp.js"></script>
 		<link href="//scripting.com/chat/code/chatstyles.css" rel="stylesheet" type="text/css">
 		
-		<link href="//fargo.io/code/shared/oldschool/daytemplate.css?x=10" rel="stylesheet" type="text/css">
-		<script src="//fargo.io/code/shared/oldschool/daytemplate.js?x=10"></script>
+		<script src="//scripting.com/code/tagrefdialog/dialog.js"></script>
+		
+		<link href="//scripting.com/code/oldschool/daytemplate.css?x=1" rel="stylesheet" type="text/css">
+		<script src="//scripting.com/code/oldschool/daytemplate.js?x=0"></script>
 		
 		<script>
 			var config = [%configJson%];
@@ -72,6 +74,9 @@
 		<div class="divPagetop">
 			[%pagetop%]
 			</div>
+		<div class="divBidenAd">
+			<img src="http://scripting.com/images/2020/09/06/bidenHarris2020.png" width="125" height="94" title="I'm ridin' with Biden in 2020!">
+			</div>
 		<div class="divPageBody">
 			<div class="divScriptingTabsPage" id="idScriptingTabsPage">
 				<div class="divScriptingTabs" id="idTabs" style="visibility: visible;">
@@ -89,12 +94,13 @@
 					</div>
 				</div>
 			<div class="divFooter">
-				<p>[%copyright%]</p>
+				<p>&copy; copyright 1994-2023 Dave Winer.</p>
 				<p>Last update: [%now%].</p>
 				<p><span class="spHowLongRunning"></span></p>
 				<p>You know those obnoxious sites that pop up dialogs when they think you're about to leave, asking you to subscribe to their email newsletter? Well that won't do for Scripting News readers who are a discerning lot, very loyal, but that wouldn't last long if I did rude stuff like that. So here I am at the bottom of the page <i>quietly</i> encouraging you to <a href="http://scripting.com/email/">sign up for the nightly email</a>. It's got everything from the previous day on Scripting, plus the contents of the linkblog and who knows what else we'll get in there. People really love it. I wish I had done it sooner. And every email has an unsub link so if you want to get out, you can, easily -- no questions asked, and no follow-ups. Go ahead and do it, you won't be sorry! :-)</p>
 				<p id="idSnarkySlogan"></p>
 				[%socialMediaLinks%]
+				<div class="divMastodonLink"><a rel="me" href="https://mastodon.social/@davew">davew@mastodon.social</a></div>
 				</div>
 			</div>
 		<div class="divForSearchIndex" style="display: none;" id="idBodytext">

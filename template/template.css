@@ -135,10 +135,14 @@ body {
 .spPermaLink a {
 	font-family: "Ubuntu";
 	color: purple;
-	opacity: 0.5;
+	opacity: 0.3;
 	font-weight: normal;
 	font-size: 14px;
 	cursor: pointer;
+	}
+.spPermaLink a:hover {
+	opacity: 0.9;
+	color: green;
 	}
 .divArchivePageDay {
 	margin-bottom: 40px;
@@ -341,6 +345,7 @@ body {
 	.divScriptingTabs li {
 		width: 120px;
 		color: gray;
+		border-bottom: 1px solid white; /* 4/11/23 by DW */
 		}
 	.active {
 		color: black;
@@ -551,6 +556,7 @@ body {
 	code {
 		color: inherit;
 		white-space: normal;
+		font-size: 15px;
 		}
 /*  1/3/20 by DW -- inlineImage styles. */
 	.divInlineImage {
@@ -562,7 +568,7 @@ body {
 		line-height: 130%;
 		text-align: center;
 		}
-	.imgInline {
+	.imgInline, iframe {
 		margin-bottom: 10px;
 		}
 /*  3/3/20 PM by DW */
@@ -570,6 +576,59 @@ body {
 		display: none;
 		cursor: pointer;
 		color: green;
+		}
+/*  4/24/20 PM by DW */
+	.ulCodeSubs {
+		font-family: "Lucida Console", Monaco, "Courier New", "Courier", monospace;
+		font-size: 14px !important;
+		}
+	.ulCodeSubs li {
+		line-height: 130%;
+		}
+	.ulCodeSubs .spPermaLink {
+		display: none;
+		}
+/*  10/10/20 by DW -- biden/harris ad */
+	.divBidenAd {
+		display: none;
+		position: fixed;
+		top: 300;
+		right: 100;
+		}
+/*  7/17/21 by DW -- tagrefs */
+	.spTagref { 
+		cursor: pointer;
+		}
+	.divScriptingTab .spTagref, .divDayContainer .spTagref {
+		color: #0088cc;
+		}
+	.divScriptingTab .spTagref:hover, .divDayContainer .spTagref:hover {
+		text-decoration: underline;
+		}
+	.divScriptingTab .spTagref:before, .divDayContainer .spTagref:before {
+		content: "[";
+		}
+	.divScriptingTab .spTagref:after, .divDayContainer .spTagref:after {
+		content: "]";
+		}
+/*  11/16/22 AM by DW -- misc */
+	.divMastodonLink {
+		margin-top: 10px;
+		}
+	.divMastodonLink a {
+		color: inherit;
+		}
+/*  2/3/23  by DW */
+	.divToggleConnect {
+		display: none;
+		}
+/*  4/9/23 by DW */
+	.divEmbeddedToot {
+		visibility: hidden;
+		}
+/* 4/19/23 by DW */
+	.divLinkblogDay p {
+		font-size: 16px;
 		}
 
 /* styles for phone */
@@ -660,9 +719,18 @@ body {
 			margin-left: auto;
 			margin-right: auto;
 			}
+		.divBidenAd {
+			position: fixed;
+			top: 0;
+			right: 0;
+			opacity: .5;
+			}
 		}
 /* styles for tablet */
 	@media only screen and (min-device-width: 768px) and (max-device-width: 1024px) {
+		body {
+			font-size: 17px;
+			}
 		.divPagetopText {
 			top: 30;
 			width: 100%;
@@ -673,12 +741,18 @@ body {
 			height: 185px;
 			}
 		.divPageBody {
-			width: 75%;
+			width: 95%;
 			margin-left: auto;
 			margin-right: auto;
-			margin-top: 230px;
+			margin-top: 200px;
 			}
 		.divLastScriptingUpdate {
 			display: none;
+			}
+		.divBidenAd {
+			position: fixed;
+			top: 0;
+			right: 0;
+			opacity: .5;
 			}
 		}

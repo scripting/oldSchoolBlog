@@ -1,4 +1,4 @@
-var myVersion = "0.6.16";
+var myVersion = "0.6.18";
 
 const flLikesEnabled = false; //2/7/20 by DW -- I want to reclaim the space, they weren't being used, and the server needs a new interface
 
@@ -11,7 +11,6 @@ var tweetSerialnum = 0;
 var urlTwitterServer = "http://electricserver.scripting.com/";
 const urlLinkblogPage = "http://scripting.com/?tab=links"; //9/13/17 by DW
 var ctLikesInPage = 0; //11/10/18 by DW
-
 
 
 
@@ -34,6 +33,15 @@ var ctLikesInPage = 0; //11/10/18 by DW
 			savedtext: undefined,
 			urlLinkblogJson: "http://radio3.io/users/davewiner/linkblog.json",
 			click: viewLinkblogTab
+			},
+		news: {
+			enabled: true,
+			path: "news.html",
+			title: "News",
+			icon: "newspaper-o",
+			htmltext: "<div class=\"divRiverContainer\"><div class=\"divRiverDisplay\" id=\"idRiverDisplay\" data-title=\"River\"></div></div>",
+			urlRiver: "http://radio3.io/rivers/iowa.js",
+			click: viewNewsTab
 			},
 		river: {
 			enabled: false,
@@ -59,7 +67,7 @@ var ctLikesInPage = 0; //11/10/18 by DW
 			icon: "info-circle",
 			htmltext: "<div class=\"divAboutOutline\" id=\"idAboutOutline\"></div>",
 			outlineTitle: "About Scripting News",
-			urlAboutOpml: "http://scripting.com/aboutpage.opml",
+			urlAboutOpml: "http://scripting.com/publicfolder/scripting/aboutpage.opml", //2/22/23 by DW
 			click: viewAboutTab
 			}
 		};
@@ -82,52 +90,96 @@ var ctLikesInPage = 0; //11/10/18 by DW
 	function viewBlogTab (callback) {
 		setTabContent (tabs.blog.savedtext);
 		}
+	
+	function readFeed (feedUrl, callback) { //4/19/23 by DW
+		var url = "http://feeder.scripting.com/returnjson?url=" + encodeURIComponent (feedUrl);
+		readHttpFile (url, function (jsontext) {
+			if (jsontext === undefined) {
+				callback (undefined);
+				}
+			else {
+				try {
+					var jstruct = JSON.parse (jsontext);
+					callback (jstruct); 
+					}
+				catch (err) {
+					callback (undefined);
+					}
+				}
+			});
+		}
+	
+	
 	function initLinkblog (callback) {
-		function appendDay (jstruct) {
+		
+		console.log ("initLinkblog");
+		const firstLinkblogDay = new Date ("April 17, 2023");
+		
+		function buildDaysTable (theFeed) {
+			var daysTable = new Object ();
+			theFeed.items.forEach (function (item) {
+				const pubDate = new Date (item.pubDate);
+				if (dayGreaterThanOrEqual (pubDate, firstLinkblogDay)) {
+					const datestring = pubDate.toLocaleDateString (); //something like 4/19/2023
+					var bucket = daysTable [datestring];
+					if (bucket === undefined) {
+						daysTable [datestring] = new Array ();
+						bucket = daysTable [datestring];
+						}
+					bucket.push (item);
+					}
+				});
+			return (daysTable);
+			}
+		function cleanDescription (desc) { //4/18/23 by DW
+			if (beginsWith (desc, "<p>")) {
+				desc = stringDelete (desc, 1, 3);
+				}
+			if (endsWith (desc, "</p>\n")) {
+				desc = stringMid (desc, 1, desc.length - 5);
+				}
+			return (desc);
+			}
+		function appendDay (dayString, theDayItems) {
+			
+			const when = new Date (dayString); //turn something like 4/19/2023 to a date object
 			var daytext = "", indentlevel = 0;
-			var dateFormat = "%A, %B %e, %Y";
-			try {dateFormat = pagetable.homePageDateFormat} catch (err) {};
-			var datestring = formatDate (jstruct.when, dateFormat);
+			const dateFormat = "%A, %B %e, %Y";
+			var datestring = formatDate (when, dateFormat);
 			function add (s) {
 				daytext += filledString ("\t", indentlevel) + s + "\n";
 				}
-			add ("<div class=\"divDayTitle\">" + datestring + "</div>");
+			console.log ("appendDay: " + datestring);
+			add ("<div class=\"divLinkblogDayTitle\">" + datestring + "</div>");
 			add ("<div class=\"divLinkblogDay\">"); indentlevel++;
-			for (var i = 0; i < jstruct.dayHistory.length; i++) {
-				try {
-					var item = jstruct.dayHistory [i], linktext = "", icon = "";
-					//set linktext, icon
-						if ((item.link != undefined) && (item.link.length > 0)) {
-							var splitUrl = urlSplitter (trimLeading (item.link, " ")); //10/15/14 by DW -- remove leading blanks
-							var host = splitUrl.host;
-							if (beginsWith (host, "www.")) {
-								host = stringDelete (host, 1, 4);
-								}
-							linktext = " <a class=\"aHost\" href=\"" + item.link + "\" target=\"blank\">" + host + "</a>";
-							
-							
-							}
-					add ("<p>" + icon + item.text + linktext + "</p>");
+			theDayItems.forEach (function (item) {
+				var link = "";
+				if (typeof item.link == "string") { //1/13/23 by DW
+					link = "<a href=\"" + item.link + "\">" + getDomainFromUrl (item.link) + "</a>";
 					}
-				catch (error) {
-					console.log ("appendDay: error == " + error + " while adding item == " + item.text);
-					}
-				}
+				add ("<p>" + cleanDescription (item.description) + " " + link + "</p>"); //4/18/23 by DW
+				});
 			add ("</div>"); indentlevel--;
 			return (daytext)
 			}
-		readHttpFile (tabs.linkblog.urlLinkblogJson, function (jsontext) {
-			if (jsontext !== undefined) { //11/19/17 by DW
-				var htmltext = "", daysTable = JSON.parse (jsontext);
-				for (var i = 0; i < daysTable.length; i++) { //10/8/16 by DW
-					htmltext += appendDay (daysTable [i].jstruct);
+		
+		var feedUrl = "http://data.feedland.org/feeds/davewiner.xml";
+		readFeed (feedUrl, function (theFeed) {
+			if (theFeed === undefined) {
+				console.log ("initLinkblog: theFeed == " + theFeed);
+				}
+			else {
+				var daysTable = buildDaysTable (theFeed), htmltext = "";
+				for (var x in daysTable) {
+					htmltext += appendDay (x, daysTable [x]);
 					}
 				tabs.linkblog.savedtext = htmltext
 				}
-			if (callback != undefined) {
-				callback ();
-				}
+			callback ();
 			});
+		
+		
+		
 		}
 	function viewLinkblogTab (callback) {
 		setTabContent (tabs.linkblog.htmltext);
@@ -145,6 +197,8 @@ var ctLikesInPage = 0; //11/10/18 by DW
 	function viewChatTab (callback) { //4/24/19 by DW
 		setTabContent (tabs.chat.htmltext);
 		viewChatPage ();
+		}
+	function viewNewsTab (callback) {
 		}
 	function viewAboutTab (callback) {
 		setTabContent (tabs.about.htmltext);
@@ -173,6 +227,9 @@ var ctLikesInPage = 0; //11/10/18 by DW
 			case "linkblog":
 				redirectname = "links";
 				break;
+			case "news": //10/18/22 by DW
+				window.location.href = "http://news.scripting.com/";
+				return;
 			case "about":
 				break;
 			}
@@ -424,6 +481,7 @@ var ctLikesInPage = 0; //11/10/18 by DW
 			}
 		}
 //twitter comments -- 12/14/18 by DW
+	const flTwitterCommentsEnabled = false; //2/3/23 by DW
 	const tweetCommentHashtag = "#scriptingnews";
 	const ctUrlInTweetChars = 23;
 	
@@ -480,33 +538,35 @@ var ctLikesInPage = 0; //11/10/18 by DW
 			});
 		}
 	function setupTwitterComments () {
-		const shareIcon = "<i class=\"fa fa-retweet\"></i>";
-		const maxTextLengthForPrompt = 50;
-		$(".divTitledItem, .divSingularItem").each (function () {
-			var flCommentSetup = getBoolean ($(this).data ("commentsetup")); //10/17/19 by DW
-			if (!flCommentSetup) { //10/17/19 by DW
-				var urlPermalink = getPostPermalink (this); 
-				var theText = getPostText (this);
-				var theIcon = "<a title=\"Click here to RT in Twitter.\">" + shareIcon + "</a>";
-				var htmltext = "<span class=\"spTwitterComment\">" + theIcon + "</span>";
-				var theObject = $(htmltext);
-				$(theObject).click (function () {
-					ifConnected ("Sign on to Twitter to enable comments?", function () {
-						var thePrompt = "RT: " + maxLengthString (theText, maxTextLengthForPrompt);
-						startTweetDialog (thePrompt, function (tweetText) {
-							if (tweetText === undefined) { //user clicked Cancel
-								closeTweetDialog ();
-								}
-							else {
-								postTweetComment (tweetText, urlPermalink);
-								}
+		if (flTwitterCommentsEnabled) {
+			const shareIcon = "<i class=\"fa fa-retweet\"></i>";
+			const maxTextLengthForPrompt = 50;
+			$(".divTitledItem, .divSingularItem").each (function () {
+				var flCommentSetup = getBoolean ($(this).data ("commentsetup")); //10/17/19 by DW
+				if (!flCommentSetup) { //10/17/19 by DW
+					var urlPermalink = getPostPermalink (this); 
+					var theText = getPostText (this);
+					var theIcon = "<a title=\"Click here to RT in Twitter.\">" + shareIcon + "</a>";
+					var htmltext = "<span class=\"spTwitterComment\">" + theIcon + "</span>";
+					var theObject = $(htmltext);
+					$(theObject).click (function () {
+						ifConnected ("Sign on to Twitter to enable comments?", function () {
+							var thePrompt = "RT: " + maxLengthString (theText, maxTextLengthForPrompt);
+							startTweetDialog (thePrompt, function (tweetText) {
+								if (tweetText === undefined) { //user clicked Cancel
+									closeTweetDialog ();
+									}
+								else {
+									postTweetComment (tweetText, urlPermalink);
+									}
+								});
 							});
 						});
-					});
-				$(this).append (theObject);
-				$(this).attr ("data-commentsetup", true); //indicate that we've been here -- 10/17/19 by DW
-				}
-			});
+					$(this).append (theObject);
+					$(this).attr ("data-commentsetup", true); //indicate that we've been here -- 10/17/19 by DW
+					}
+				});
+			}
 		}
 //chat -- 4/18/19 by DW
 	const chatConsts = {
@@ -523,7 +583,8 @@ var ctLikesInPage = 0; //11/10/18 by DW
 		updateTwitterButton ();
 		}
 	function updateTwitterButton () {
-		var buttontext = twStorageConsts.fontAwesomeIcon + " Sign " + ((twIsTwitterConnected ()) ? "off" : "on");
+		const twitterIcon = "<i class=\"fab fa-twitter\" style=\"color: #4099FF;\"></i>"; //1/18/23 by DW
+		var buttontext = twitterIcon + " Sign " + ((twIsTwitterConnected ()) ? "off" : "on");
 		$("#idToggleConnect").html (buttontext);
 		}
 	function getChatUserInfo (callback) {
@@ -610,15 +671,132 @@ var ctLikesInPage = 0; //11/10/18 by DW
 			});
 		}
 	function infiniteScrollHandler () {
-		window.onscroll = function (ev) {
-			if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
-				if (secondsSince (whenLastMoreButtonClick) > 1) {
-					console.log ("infiniteScrollHandler: you're at the bottom of the page");
-					whenLastMoreButtonClick = new Date ();
-					moreButtonClick (1);
+		}
+//view Radio3 links rewrite -- 10/1/21 by DW
+	function viewRadio3Links (callback) {
+		console.log ("viewRadio3Links");
+		
+		var linkbloghtmltext = "";
+		var pagetable = {
+			homePageDateFormat: "%A, %B %e, %Y",
+			whenLinkblogStart: new Date ("9/1/2014"),
+			twitterScreenname: "davewiner"
+			};
+		
+		var ctDaysOnPage = 25;
+		var daysTable;
+		
+		function viewPagetable () {
+			console.log (jsonStringify (pagetable));
+			}
+		function viewLastUpdate (when) {
+			$("#idLastUdpate").html (formatDate (when, "%a %d %b %Y, %r"));
+			}
+		function appendDay (jstruct) {
+			var htmltext = "", indentlevel = 0;
+			var dateFormat = "%A, %B %e, %Y";
+			try {dateFormat = pagetable.homePageDateFormat} catch (err) {};
+			var datestring = formatDate (jstruct.when, dateFormat);
+			function add (s) {
+				htmltext += filledString ("\t", indentlevel) + s + "\n";
+				}
+			add ("<div class=\"divLinkblogDayTitle\">" + datestring + "</div>");
+			add ("<div class=\"divLinkblogDay\">"); indentlevel++;
+			for (var i = 0; i < jstruct.dayHistory.length; i++) {
+				try {
+					var item = jstruct.dayHistory [i], linktext = "", icon = "";
+					//set linktext, icon
+						if ((item.link != undefined) && (item.link.length > 0)) {
+							var splitUrl = urlSplitter (trimLeading (item.link, " ")); //10/15/14 by DW -- remove leading blanks
+							var host = splitUrl.host;
+							if (beginsWith (host, "www.")) {
+								host = stringDelete (host, 1, 4);
+								}
+							linktext = " <a class=\"aHost\" href=\"" + item.link + "\" target=\"blank\">" + host + "</a>";
+							
+							
+							}
+					add ("<p>" + icon + item.text + linktext + "</p>");
+					}
+				catch (error) {
+					console.log ("appendDay: error == " + error + " while adding item == " + item.text);
 					}
 				}
-			};
+			add ("</div>"); indentlevel--;
+			linkbloghtmltext += htmltext;
+			}
+		function loadOneDay (theDay, callback) {
+			var urlFolder = "http://radio3.io/users/" + pagetable.twitterScreenname + "/";
+			var url = urlFolder + getDatePath (theDay) + "history.json", whenReadStart = new Date ();
+			readHttpFile (url, function (jsontext) {
+				var jstruct = undefined;
+				try {
+					jstruct = JSON.parse (jsontext);
+					}
+				catch (err) {
+					console.log ("loadOneDay: err.message == " + err.message);
+					}
+				if (callback !== undefined) {
+					callback (jstruct);
+					}
+				});
+			}
+		function loadDaysTable (callback) {
+			var whenBlogStart = dateYesterday (pagetable.whenLinkblogStart), whenstart = new Date ();
+			function loadOne (theDay) {
+				loadOneDay (theDay, function (jstruct) {
+					var yesterday = dateYesterday (theDay);
+					if (jstruct != undefined) {
+						appendDay (jstruct); //why is this here? -- 11/6/14 by DW
+						daysTable.unshift ({
+							when: theDay,
+							jstruct: jstruct
+							});
+						}
+					if ((daysTable.length < ctDaysOnPage) && (dayGreaterThanOrEqual (yesterday, whenBlogStart))) {
+						loadOne (yesterday);
+						}
+					else {
+						if (callback != undefined) { //10/24/14 by DW
+							callback ();
+							}
+						console.log ("loadDaysTable: " + secondsSince (whenstart) + " secs.");
+						}
+					});
+				}
+			daysTable = new Array ();
+			loadOne (new Date ());
+			}
+		function viewDays () {
+			$("#idLinkblogDays").html ("");
+			for (var i = daysTable.length - 1; i >= 0; i--) {
+				appendDay (daysTable [i].jstruct);
+				}
+			}
+		function reloadTodaysLinks () {
+			var now = new Date (), flfound = false;
+			loadOneDay (now, function (jstruct) {
+				for (var i = 0; i < daysTable.length; i++) {
+					if (daysTable [i] != undefined) {
+						if (sameDay (daysTable [i].when, now)) {
+							daysTable [i].jstruct = jstruct;
+							flfound = true;
+							}
+						}
+					}
+				if (!flfound) {
+					daysTable.push (jstruct);
+					delete daysTable [0];
+					}
+				viewDays ();
+				viewLastUpdate (jstruct.when);
+				});
+			}
+		
+		loadDaysTable (function () {
+			viewDays ();
+			callback (linkbloghtmltext);
+			});
 		}
 
 function setTextSize (amount) {
@@ -849,6 +1027,48 @@ function setupTweets () {
 			}
 		});
 	}
+
+function setupMastodonToots () { //4/9/23 by DW
+	$(".divPageBody li, .divSingularItem").each (function () {
+		const urltoot = $(this).data ("urltoot");
+		var parentOfToot = this, tootObject = undefined;
+		if (urltoot !== undefined) {
+			console.log ("setupMastodonToots: urltoot == " + urltoot); 
+			initWedge (parentOfToot, function (flExpand) {
+				if (flExpand) {
+					function exposeTootObject () {
+						$(tootObject).slideDown (75, undefined, function () {
+							$(tootObject).css ("visibility", "visible");
+							});
+						}
+					if (tootObject === undefined) {
+						const domain = urltoot.split ("/") [2];
+						const urlembed = "https://" + domain + "/api/oembed?url=" + encodeURIComponent (urltoot);
+						readHttpFile (urlembed, function (jsontext) {
+							if (jsontext !== undefined) {
+								const jstruct = JSON.parse (jsontext);
+								console.log ("setupMastodonToots: jsontext == " + jsonStringify (jstruct));
+								tootObject = $("<div class=\"divEmbeddedToot\"></div>");
+								const embeddedObject = $(jstruct.html);
+								embeddedObject.attr ("width", 500);
+								$(tootObject).append (embeddedObject);
+								$(parentOfToot).append (tootObject);
+								exposeTootObject ();
+								}
+							});
+						}
+					else {
+						exposeTootObject ();
+						}
+					}
+				else {
+					$(tootObject).slideUp (75);
+					}
+				});
+			}
+		});
+	}
+
 function setupExpandableOutline () {
 	$(".divPageBody li").each (function () {
 		var ul = $(this).next ();
@@ -947,6 +1167,9 @@ function setupSpoilers () {
 			});
 		});
 	}
+function setupTagrefs () { //7/17/21 by DW
+	tagrefDialogStartup ();
+	}
 function viewInPopup (obj) {
 	var htmltext = "", indentlevel = 0;
 	function add (s) {
@@ -1024,6 +1247,44 @@ function everyMinute () {
 	updateSnarkySlogan (); //1/23/19 by DW
 	}
 function everySecond () {
+	$(".spHowLongUntilBidenStarts").each (function () { //1/18/21 by DW
+		function getTrumpTimeRemaining () {
+			var whenInaugration = new Date ("Wed Jan 20 2021 11:59:59 GMT-0500 (Eastern Standard Time)");
+			var now = new Date ();
+			var ctsecs = (whenInaugration - now) / 1000;
+			
+			const ctsecsinday = 60 * 60 * 24;
+			const ctsecsinhour = 60 * 60;
+			var ctdays = Math.floor (ctsecs / ctsecsinday);
+			ctsecs -= ctdays * ctsecsinday;
+			
+			var cthours = Math.floor (ctsecs / ctsecsinhour);
+			ctsecs -= cthours * ctsecsinhour;
+			
+			var ctminutes = Math.floor (ctsecs / 60);
+			ctsecs -= ctminutes * 60;
+			ctsecs = Math.floor (ctsecs);
+			
+			var s = "";
+			function addnum (num, label, fllast) {
+				if (num > 0) {
+					if (num == 1) {
+						label = stringDelete (label, label.length, 1);
+						}
+					s += num + " " + label;
+					if (!fllast) {
+						s += ", ";
+						}
+					}
+				}
+			addnum (ctdays, "days");
+			addnum (cthours, "hours");
+			addnum (ctminutes, "minutes");
+			addnum (ctsecs, "seconds", true);
+			return (s);
+			}
+		$(this).text (getTrumpTimeRemaining ());
+		});
 	$(".spRandomMotto").each (function () { //8/7/19 by DW
 		$(this).text (getRandomSnarkySlogan ());
 		});
@@ -1040,6 +1301,8 @@ function setupJavaScriptFeatures () { //1/15/19 by DW
 	setupTwitterComments (); //12/14/18 by DW
 	setupLikes (); //11/8/18 by DW
 	setupSpoilers (); //3/3/20 by DW
+	setupTagrefs (); //7/17/21 by DW
+	setupMastodonToots (); //4/9/23 by DW
 	try { //9/21/19 by DW
 		if (modalImageViewStartup !== undefined) { //6/25/18 by DW
 			modalImageViewStartup (); 
@@ -1048,14 +1311,24 @@ function setupJavaScriptFeatures () { //1/15/19 by DW
 	catch (err) {
 		}
 	}
+function setPageTopImageFromMetadata () { //5/4/20 by DW
+	if (config.metadata !== undefined) {
+		if (config.metadata.image !== undefined) {
+			$("#idPagetopImage").css ("background-image", "url(" + config.metadata.image + ")");
+			}
+		}
+	}
 function movePageDownForOldArchivePages () { //9/21/19 by DW
 	var fladjust = !dayGreaterThanOrEqual (opmlHead.dateModified, "21 Apr 2019")
 	if (fladjust) {
 		$(".divPageBody").css ("margin-top", "270px")
 		}
 	}
+function setDescription () { //4/10/21; 11:49:17 AM by DW
+	}
 function startup () {
 	console.log ("startup");
+	setDescription (); //4/10/21 by DW
 	$("#idVersionNumber").text (myVersion);
 	updateTwitterButton (); //4/23/19 by DW
 	movePageDownForOldArchivePages (); //9/21/19 by DW
@@ -1097,6 +1370,14 @@ function startup () {
 				window.location.href = config.baseUrl + newloc;
 				}
 			}
+	
+	//get tag param, if present popup the tag display in front of the blog -- 7/26/21 by DW
+		var tagParam = getURLParameter ("tag");
+		if (tagParam != "null") {
+			openTagrefDialogExternally (tagParam);
+			}
+	
+	
 	if (savedState.currentTab == "blog") { //4/7/20 by DW -- More button only visible for the blog tab
 		$("#idMoreButton").css ("display", "block"); 
 		}
@@ -1120,6 +1401,7 @@ function startup () {
 			viewLastUpdateString (); //9/28/17 by DW
 			updateSnarkySlogan (); //1/23/19 by DW
 			setupJavaScriptFeatures ();
+			setPageTopImageFromMetadata (); //5/4/20 by DW
 			hitCounter (); 
 			if (config.flGoogleAnalytics) {
 				initGoogleAnalytics (config.appDomain, config.idGoogleAccount); 
