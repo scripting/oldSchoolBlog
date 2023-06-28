@@ -34,8 +34,8 @@
 			"idGoogleAccount": "UA-39531990-1",
 
 			"wordpress": {
-        "enabled": true,
-        "siteurl": "https://techfightclub.wordpress.com",
+				"enabled": true,
+				"siteurl": "https://techfightclub.wordpress.com",
         "password": "",
         "username": "scripting"
         }

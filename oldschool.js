@@ -1,4 +1,4 @@
-var myVersion = "0.8.0", myProductName = "oldSchool";     
+var myVersion = "0.8.3", myProductName = "oldSchool";     
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -288,6 +288,7 @@ function publishBlog (jstruct, options, callback) {
 		pingsSent: new Array ()
 		};
 	var whenstart = new Date ();
+	const wpPermalinkStyle = " style=\"text-decoration: none; margin-left: .1em; color: purple;\" "; //6/28/23 by DW
 	
 	function addToPagesPublished (path) {
 		debugMessage ("published: " + path);
@@ -800,6 +801,7 @@ function publishBlog (jstruct, options, callback) {
 		return ("<div class=\"divMarkdownText\">" + processedtext + "</div>");
 		}
 	
+	
 	function getItemSubs (parent, ulLevel, urlStoryPage, flLevelIsList=true) {
 		if (getNodeType (parent) == "markdown") {
 			return (subsToMarkdown (parent));
@@ -833,8 +835,7 @@ function publishBlog (jstruct, options, callback) {
 				var item = parent.subs [i];
 				if (notComment (item)) { //11/5/20 by DW
 					const htmlElement = (flLevelIsList) ? "li" : "p"; //6/27/23 by DW
-					const permalinkStyle = " style=\"text-decoration: none; margin-left: .1em; color: purple;\" "; //6/28/23 by DW
-					add ("<" + htmlElement + getDataAtts (item) + ">" + getRenderedText (item, undefined, urlStoryPage, permalinkStyle) + "</" + htmlElement + ">");
+					add ("<" + htmlElement + getDataAtts (item) + ">" + getRenderedText (item, undefined, urlStoryPage, wpPermalinkStyle) + "</" + htmlElement + ">");
 					if (item.subs !== undefined) {
 						add (getItemSubs (item, ulLevel + 1, urlStoryPage));
 						}
@@ -849,19 +850,26 @@ function publishBlog (jstruct, options, callback) {
 		if (blogConfig.wordpress !== undefined) {
 			const theWordpress = blogConfig.wordpress;
 			if (utils.getBoolean (theWordpress.enabled)) {
+				var thePost = {
+					title: "",
+					content: "",
+					status: "publish" //omit this to create a draft that isn't published
+					};
+				
 				console.log ("sendPostToWordpress: item.text == " + item.text);
 				
-				const bodytext = getItemSubs (item, 0, "", false);
+				if (item.subs === undefined) {
+					thePost.content = getRenderedText (item, false, "", wpPermalinkStyle);
+					}
+				else {
+					thePost.title = item.text;
+					thePost.content = getItemSubs (item, 0, "", false);
+					}
 				const client = wordpress.createClient ({
 					url: theWordpress.siteurl,
 					username: theWordpress.username,
 					password: theWordpress.password
 					});
-				const thePost = {
-					title: item.text, 
-					content: bodytext,
-					status: "publish" //omit this to create a draft that isn't published
-					};
 				const ix = new Date (item.created).getTime ();
 				
 				if (blogData.wordpress.ids [ix] === undefined) {
@@ -1226,9 +1234,8 @@ function publishBlog (jstruct, options, callback) {
 							add ("</div>"); indentlevel--;
 							
 							buildStoryPage (item, itemsubtext, itemsubmarkdown); //12/28/17 by DW
-							
-							sendItemToWordpress (item); //6/27/23 by DW
 							}
+						sendItemToWordpress (item); //6/27/23 by DW
 						}
 					}
 				}
