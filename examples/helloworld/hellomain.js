@@ -1,2 +1,2 @@
-const oldschool = require ("oldschoolblog");
+const oldschool = require ("../../oldschool.js");
 oldschool.init (); //it sets up a server and waits for instructions

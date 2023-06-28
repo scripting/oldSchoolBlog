@@ -1,7 +1,7 @@
 {
 	"name": "oldschoolblog",
 	"description": "Blogging in the ways of ye old school.",
-	"version": "0.7.24",
+	"version": "0.8.0",
 	"author": "Dave Winer <dave@scripting.com>",
 	"license": "MIT",
 	"repository": {
@@ -17,12 +17,13 @@
 		"nodejs-websocket": "*",
 		"dateformat": "4.5.1",
 		"marked": "3.0.8",
-		"node-emoji": "*",
+		"node-emoji": "1.11.0",
 		"daverss": "*",
 		"daves3": "*", 
 		"opml": "*",
 		"daveutils": "*",
 		"davexmlrpc": "*",
-		"macroprocess": "*"
+		"macroprocess": "*",
+		"wordpress": "*"
 		}
 	}

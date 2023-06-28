@@ -4,10 +4,7 @@
 			"title": "Kim Parker's Blog",
 			"link": "http://bloatware.org/users/kim/",
 			"description": "I work for Bloatware, the best company in the world, now that I'm there!",
-			
-			
-			"urlJson": "http://drummer.scripting.com/davewiner/blog.json",
-			
+			"urlOpml": "http://scripting.com/publicfolder/drummer/examples/kimparker.opml",
 			"basePath": "/bloatware.org/users/kim/",
 			"basePathItems": "/bloatware.org/users/kim/items/",
 			"baseUrl": "http://bloatware.org/users/kim/",
@@ -29,12 +26,19 @@
 			"customPages": [
 				],
 			"maxDaysOnHomePage": 25,
-			"flUploadItemsToS3": true, 
+			"flUploadItemsToS3": true,
 			"urlHeaderImage": "http://scripting.com/2016/10/31/auroraBridge.png",
 			"flIncludeImageInMetadata": false,
 			"urlGlossaryOpml": "http://electricserver.scripting.com/users/davewiner/electric/glossary.opml",
 			"flGoogleAnalytics": true,
-			"idGoogleAccount": "UA-39531990-1"
+			"idGoogleAccount": "UA-39531990-1",
+
+			"wordpress": {
+        "enabled": true,
+        "siteurl": "https://techfightclub.wordpress.com",
+        "password": "",
+        "username": "scripting"
+        }
 			}
 		}
 	}

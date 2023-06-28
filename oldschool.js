@@ -1,4 +1,4 @@
-var myVersion = "0.7.24", myProductName = "oldSchool";     
+var myVersion = "0.8.0", myProductName = "oldSchool";     
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -21,6 +21,7 @@ const querystring = require ("querystring");
 const opml = require ("opml");
 const xmlrpc = require ("davexmlrpc"); //10/14/19 by DW
 const macroprocess = require ("macroprocess"); //9/2/20 by DW
+const wordpress = require ("wordpress"); //6/27/23 by DW 
 
 var baseOutputPath = "/scripting.com/reboot/test/v2/", baseOutputUrl = "http:/" + baseOutputPath;
 var urlDefaultTemplate = "http://scripting.com/code/oldschool/daytemplate.html"
@@ -43,6 +44,7 @@ var config = { //defaults
 	pagesFolder: "data/pages/",
 	daysFolder: "data/days/",
 	itemsFolder: "data/items/",
+	wordpressFolder: "data/wordpress/", //6/27/23 by DW
 	debugMessageCallback: undefined, //8/8/17 by DW
 	flXmlRpcPing: false, //11/22/19 by DW
 	urlPingEndpoint: "http://githubstorypage.scripting.com/rpc2", //11/22/19 by DW
@@ -694,7 +696,7 @@ function publishBlog (jstruct, options, callback) {
 		var videotext = "<iframe width=\"560\" height=\"315\" src=\"" + url + "\" frameborder=\"0\" allow=\"accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture\" allowfullscreen></iframe>";
 		return ("<center>" + videotext + "</center>" + s);
 		}
-	function getRenderedText (item, flTextIsTitle, urlStoryPage) {
+	function getRenderedText (item, flTextIsTitle, urlStoryPage, permalinkStyle="") {
 		var s = processText (item.text), flInlineImage = false;
 		if (item.inlineImage !== undefined) { //1/2/20 by DW
 			s = addInlineImageTo (s, item.inlineImage);
@@ -739,8 +741,9 @@ function publishBlog (jstruct, options, callback) {
 			s = "<a href=\"" + item.permalink + "\"><span class=\"spTitleLink\">" + s + "</span></a>";
 			}
 		
-		var title = "Direct link to this item.";
-		s = "<a name=\"" + ourLink + "\"></a>" + imgHtml + s + "<span class=\"spPermaLink\"><a href=\"" + item.permalink + "\" title=\"" + title + "\">#</a></span>";
+		const title = "Direct link to this item.";
+		const permalink = "<span class=\"spPermaLink\"><a href=\"" + item.permalink + "\" title=\"" + title + "\"" + permalinkStyle + ">#</a></span>";
+		s = "<a name=\"" + ourLink + "\"></a>" + imgHtml + s + permalink;
 		
 		if (flInlineImage) { //1/3/20 by DW
 			s = "<div class=\"divInlineImage\">" + s + "</div>";
@@ -797,7 +800,7 @@ function publishBlog (jstruct, options, callback) {
 		return ("<div class=\"divMarkdownText\">" + processedtext + "</div>");
 		}
 	
-	function getItemSubs (parent, ulLevel, urlStoryPage) {
+	function getItemSubs (parent, ulLevel, urlStoryPage, flLevelIsList=true) {
 		if (getNodeType (parent) == "markdown") {
 			return (subsToMarkdown (parent));
 			}
@@ -823,20 +826,82 @@ function publishBlog (jstruct, options, callback) {
 			if (utils.getBoolean (parent.collapse)) { //5/15/18 by DW
 				ulCollapsedClass = " ulCollapsed";
 				}
-			add ("<ul class=\"ulLevel" + ulLevel + ulAddedClass + ulCollapsedClass + "\">"); indentlevel++;
+			
+			const htmlElement = (flLevelIsList) ? "ul" : "div"; //6/27/23 by DW
+			add ("<" + htmlElement + " class=\"ulLevel" + ulLevel + ulAddedClass + ulCollapsedClass + "\">"); indentlevel++;
 			for (var i = 0; i < parent.subs.length; i++) {
 				var item = parent.subs [i];
 				if (notComment (item)) { //11/5/20 by DW
-					add ("<li" + getDataAtts (item) + ">" + getRenderedText (item, undefined, urlStoryPage) + "</li>");
+					const htmlElement = (flLevelIsList) ? "li" : "p"; //6/27/23 by DW
+					const permalinkStyle = " style=\"text-decoration: none; margin-left: .1em; color: purple;\" "; //6/28/23 by DW
+					add ("<" + htmlElement + getDataAtts (item) + ">" + getRenderedText (item, undefined, urlStoryPage, permalinkStyle) + "</" + htmlElement + ">");
 					if (item.subs !== undefined) {
 						add (getItemSubs (item, ulLevel + 1, urlStoryPage));
 						}
 					}
 				}
-			add ("</ul>"); indentlevel--;
+			add ("</" + htmlElement + ">"); indentlevel--;
 			return (htmltext);
 			}
 		}
+	
+	function sendItemToWordpress (item, callback) { //6/27/23 by DW
+		if (blogConfig.wordpress !== undefined) {
+			const theWordpress = blogConfig.wordpress;
+			if (utils.getBoolean (theWordpress.enabled)) {
+				console.log ("sendPostToWordpress: item.text == " + item.text);
+				
+				const bodytext = getItemSubs (item, 0, "", false);
+				const client = wordpress.createClient ({
+					url: theWordpress.siteurl,
+					username: theWordpress.username,
+					password: theWordpress.password
+					});
+				const thePost = {
+					title: item.text, 
+					content: bodytext,
+					status: "publish" //omit this to create a draft that isn't published
+					};
+				const ix = new Date (item.created).getTime ();
+				
+				if (blogData.wordpress.ids [ix] === undefined) {
+					client.newPost (thePost, function (err, idNewPost) {
+						if (err) {
+							if (callback !== undefined) {
+								callback (err);
+								}
+							}
+						else {
+							console.log ("sendPostToWordpress: idNewPost == " + idNewPost);
+							
+							blogData.wordpress.ids [ix] = idNewPost;
+							blogData.wordpress.flChanged = true;
+							
+							if (callback !== undefined) {
+								callback (undefined, idNewPost);
+								}
+							}
+						});
+					}
+				else {
+					const idPostToUpdate = blogData.wordpress.ids [ix];
+					client.editPost (idPostToUpdate, thePost, function (err) {
+						if (err) {
+							if (callback !== undefined) {
+								callback (err);
+								}
+							}
+						else {
+							if (callback !== undefined) {
+								callback (undefined, true);
+								}
+							}
+						});
+					}
+				}
+			}
+		}
+	
 	function dayNotDeleted (whenDayCreated) { //8/30/21 by DW 
 		if (blogConfig.flOldSchoolUseCache) {
 			return (true);
@@ -1151,14 +1216,18 @@ function publishBlog (jstruct, options, callback) {
 							add ("<div class=\"divSingularItem\"" + getDataAtts (item) + ">" + getRenderedText (item, false, urlpage) + "</div>");
 							}
 						else {
+							const titletext = getRenderedText (item, true); //6/27/23 by DW
+							const itemsubtext = getItemSubs (item, 0, item.permalink);
+							const itemsubmarkdown = getItemSubsMarkdown (item, 0);
+							
 							add ("<div class=\"divTitledItem\">"); indentlevel++;
-							add ("<div class=\"divTitle\">" + getRenderedText (item, true) + "</div>");
-							var itemsubtext = getItemSubs (item, 0, item.permalink);
-							var itemsubmarkdown = getItemSubsMarkdown (item, 0);
+							add ("<div class=\"divTitle\">" + titletext + "</div>");
 							add (itemsubtext);
 							add ("</div>"); indentlevel--;
 							
 							buildStoryPage (item, itemsubtext, itemsubmarkdown); //12/28/17 by DW
+							
+							sendItemToWordpress (item); //6/27/23 by DW
 							}
 						}
 					}
@@ -1777,7 +1846,11 @@ function initBlog (blogName, callback) {
 	dataForBlogs [blogName] = {
 		htmlArchive: new Object (),
 		calendar: new Object (),
-		flCalendarChanged: false
+		flCalendarChanged: false,
+		wordpress: { //6/27/23 by DW
+			ids: new Object (),
+			flChanged: false
+			},
 		};
 	var blogData = dataForBlogs [blogName];
 	function getBlogHtmlArchive (callback) {
@@ -1813,11 +1886,33 @@ function initBlog (blogName, callback) {
 				}
 			});
 		}
+	function getWordpressData (callback) { //6/27/23 by DW
+		var f = config.wordpressFolder + blogName + ".json";
+		utils.sureFilePath  (f, function () {
+			fs.readFile (f, function (err, jsontext) {
+				if (err) {
+					callback (err);
+					}
+				else {
+					try {
+						blogData.wordpress = JSON.parse (jsontext);
+						callback (undefined);
+						}
+					catch (err) {
+						callback (err);
+						}
+					}
+				});
+			});
+		}
+	
 	readCalendarJson (blogConfig, blogData, function () {
 		getBlogHtmlArchive (function () {
-			if (callback !== undefined) { //8/10/21 by DW
-				callback ();
-				}
+			getWordpressData (function () { //6/27/23 by DW
+				if (callback !== undefined) { //8/10/21 by DW
+					callback ();
+					}
+				});
 			});
 		});
 	}
@@ -2016,6 +2111,18 @@ function init (configParam, callback) {
 					if (blogData.flCalendarChanged) {
 						publishCalendarJson (blogConfig, blogData);
 						blogData.flCalendarChanged = false;
+						}
+					if (blogData.wordpress.flChanged) { //6/27/23 by DW
+						blogData.wordpress.flChanged = false;
+						const f = config.wordpressFolder + x + ".json";
+						utils.sureFilePath  (f, function () {
+							const jsontext = utils.jsonStringify (blogData.wordpress);
+							fs.writeFile (f, jsontext, function (err) {
+								if (err) {
+									console.log ("saveWordpressData: err.message == " + err.message);
+									}
+								});
+							});
 						}
 					}
 				if (flPingLogEnabled && flPingLogChanged) {

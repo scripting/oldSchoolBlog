@@ -112,12 +112,11 @@ var ctLikesInPage = 0; //11/10/18 by DW
 	
 	function initLinkblog (callback) {
 		console.log ("initLinkblog");
-		var feedUrl = "http://data.feedland.org/feeds/davewiner.xml";
-		var url = "http://feeder.scripting.com/returnlinkbloghtml?url=" + encodeURIComponent (feedUrl);
+		const feedUrl = "http://data.feedland.org/feeds/davewiner.xml";
+		const url = "http://feeder.scripting.com/returnlinkbloghtml?url=" + encodeURIComponent (feedUrl);
 		readHttpFile (url, function (htmltext) {
 			if (htmltext === undefined) {
-				callback (undefined);
-				tabs.linkblog.savedtext = "Error connecting to feeder.scripting.com to get the linkblog rendering.";
+				tabs.linkblog.savedtext = "Error connecting to <a href=\"" + url + "\">feeder.scripting.com</a> to get the linkblog rendering.";
 				}
 			else {
 				tabs.linkblog.savedtext = htmltext;
