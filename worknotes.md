@@ -1,12 +1,14 @@
 #### v0.8.4 -- 6/29/23 by DW
 
-Fixed a bug where a change in the new WordPress support broke the RSS feed for Scripting News.
+Breakage fix
 
-I tried to make the purple pound signs on WordPress renderings point into the WP site instead of the main site, but didn't realize it was recording the permalink to use in the RSS feed later in the build process. I could have worked around this error by doing the WP rendering first, but that was too fragile for my taste. So I just made the PPS point to the scripting.com version of the permalink. It makes sense. Not a hugely important feature, I considered not supporting it at all in the WP version. But this is better. 
+* Fixed a bug where a change in the new WordPress support broke the RSS feed for Scripting News.
 
-Moral of the story -- Old School was built over time, with features being added to an existing process, and the dependencies aren't always obvious in the code. Why should rendering a page in HTML have any effect on the building of the RSS feed. Well, it does. :smile:
+* I tried to make the purple pound signs on WordPress renderings point into the WP site instead of the main site, but didn't realize it was recording the permalink to use in the RSS feed later in the build process. I could have worked around this error by doing the WP rendering first, but that was too fragile for my taste. So I just made the PPS point to the scripting.com version of the permalink. It makes sense. Not a hugely important feature, I considered not supporting it at all in the WP version. But this is better. 
 
-PS: It's good to have the glue to WP working again. Long story, but I thought they had turned off MetaWeblog API support, but they didn't. Somehow the wires got crossed. Hats off to Automattic for keeping things running. 
+* Moral of the story -- Old School was built over time, with features being added to an existing process, and the dependencies aren't always obvious in the code. Why should rendering a page in HTML have any effect on the building of the RSS feed. Well, it does. :smile:
+
+* PS: It's good to have the glue to WP working again. Long story, but I thought they had turned off MetaWeblog API support, but they didn't. Somehow the wires got crossed. Hats off to Automattic for keeping things running. 
 
 #### v0.8.0 -- 6/28/23 by DW
 
