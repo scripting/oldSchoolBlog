@@ -6,7 +6,7 @@ I tried to make the purple pound signs on WordPress renderings point into the WP
 
 Moral of the story -- Old School was built over time, with features being added to an existing process, and the dependencies aren't always obvious in the code. Why should rendering a page in HTML have any effect on the building of the RSS feed. Well, it does. :smile:
 
-PS: It's good to have the glue to WP working again. Long story, but I thought they had turned off MetaWeblog API support, but they didn't. Somehow the wires got crossed. Hats off to Automattic for keeing things running. 
+PS: It's good to have the glue to WP working again. Long story, but I thought they had turned off MetaWeblog API support, but they didn't. Somehow the wires got crossed. Hats off to Automattic for keeping things running. 
 
 #### v0.8.0 -- 6/28/23 by DW
 
