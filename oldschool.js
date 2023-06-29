@@ -1,4 +1,4 @@
-var myVersion = "0.8.3", myProductName = "oldSchool";     
+var myVersion = "0.8.4", myProductName = "oldSchool";     
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -846,7 +846,7 @@ function publishBlog (jstruct, options, callback) {
 			}
 		}
 	
-	function sendItemToWordpress (item, callback) { //6/27/23 by DW
+	function sendItemToWordpress (item, urlStoryPage, callback) { //6/27/23 by DW
 		if (blogConfig.wordpress !== undefined) {
 			const theWordpress = blogConfig.wordpress;
 			if (utils.getBoolean (theWordpress.enabled)) {
@@ -859,11 +859,11 @@ function publishBlog (jstruct, options, callback) {
 				console.log ("sendPostToWordpress: item.text == " + item.text);
 				
 				if (item.subs === undefined) {
-					thePost.content = getRenderedText (item, false, "", wpPermalinkStyle);
+					thePost.content = getRenderedText (item, false, urlStoryPage, wpPermalinkStyle);
 					}
 				else {
 					thePost.title = item.text;
-					thePost.content = getItemSubs (item, 0, "", false);
+					thePost.content = getItemSubs (item, 0, urlStoryPage, false);
 					}
 				const client = wordpress.createClient ({
 					url: theWordpress.siteurl,
@@ -1235,7 +1235,7 @@ function publishBlog (jstruct, options, callback) {
 							
 							buildStoryPage (item, itemsubtext, itemsubmarkdown); //12/28/17 by DW
 							}
-						sendItemToWordpress (item); //6/27/23 by DW
+						sendItemToWordpress (item, urlpage); //6/27/23 by DW
 						}
 					}
 				}
