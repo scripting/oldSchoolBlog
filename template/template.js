@@ -1273,6 +1273,13 @@ function setDescription () { //4/10/21; 11:49:17 AM by DW
 	}
 function startup () {
 	console.log ("startup");
+	
+	if (location.host == "scripting.com.s3-website-us-east-1.amazonaws.com") { //8/22/23 by DW
+		let newhref = replaceAll (location.href, location.host, "scripting.com");
+		console.log ("newhref = " + newhref);
+		location.href = newhref;
+		}
+	
 	setDescription (); //4/10/21 by DW
 	$("#idVersionNumber").text (myVersion);
 	updateTwitterButton (); //4/23/19 by DW
