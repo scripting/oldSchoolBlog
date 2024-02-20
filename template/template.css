@@ -334,12 +334,14 @@ body {
 		margin-top: 260px;
 		}
 	.divScriptingTab {
+		margin-top: -1px; /* 12/2/23 by DW */
 		min-height: 600px;
 		background-color: white;
 		border: 1px solid rgb(221, 221, 221);
 		}
 	.iTabIcon {
-		margin-right: .4em;
+		margin-left: 2px;
+		margin-right: 4px;
 		opacity: .8;
 		}
 	.divScriptingTabs li {

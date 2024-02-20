@@ -1,4 +1,4 @@
-var myVersion = "0.8.4", myProductName = "oldSchool";     
+var myVersion = "0.8.8", myProductName = "oldSchool";     
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -1440,6 +1440,12 @@ function publishBlog (jstruct, options, callback) {
 							message: message
 							});
 						flPingLogChanged = true;
+						}
+					if (err) { //12/2/23 by DW
+						console.log ("publishRssFeed: urlFeed == " + urlFeed + ", urlServer == " + urlServer + ", err.message == " + err.message, + ", res.statusCode == " + res.statusCode);
+						}
+					else {
+						console.log ("publishRssFeed: urlFeed == " + urlFeed + ", urlServer == " + urlServer + ", res.statusCode == " + res.statusCode);
 						}
 					});
 				}

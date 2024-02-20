@@ -1,3 +1,7 @@
+#### v0.8.5 --12/2/23 by DW
+
+Added debugging code for pings in publishRssFeed.
+
 #### v0.8.4 -- 6/29/23 by DW
 
 Breakage fix

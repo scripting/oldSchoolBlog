@@ -743,6 +743,14 @@ var ctLikesInPage = 0; //11/10/18 by DW
 			callback (linkbloghtmltext);
 			});
 		}
+//feedland rivers -- 11/15/23 by DW
+	function viewRiver (screenname, catname, whereToAppend, callback) {
+		displayTraditionalRiver ({screenname, catname}, whereToAppend, function (err) {
+			if (err) {
+				alertDialog (err.message);
+				}
+			});
+		}
 
 function setTextSize (amount) {
 	
