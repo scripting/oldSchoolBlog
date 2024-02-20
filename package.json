@@ -16,7 +16,7 @@
 		"request": "*",
 		"nodejs-websocket": "*",
 		"dateformat": "4.5.1",
-		"marked": "3.0.8",
+		"marked": "4.0.10",
 		"node-emoji": "1.11.0",
 		"daverss": "*",
 		"daves3": "*", 
