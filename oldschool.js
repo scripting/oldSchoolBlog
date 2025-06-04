@@ -1,4 +1,4 @@
-var myVersion = "0.8.8", myProductName = "oldSchool";     
+var myVersion = "0.8.14", myProductName = "oldSchool";     
 
 exports.init = init;
 exports.publishBlog = publishBlog;
@@ -1004,7 +1004,10 @@ function publishBlog (jstruct, options, callback) {
 			add ("<div class=\"divPagetopTextBackground\"></div>");
 			add ("<div class=\"divPagetopText\" id=\"idPageTopText\">"); indentlevel++;
 			add ("<div class=\"divPagetopTitle\" id=\"idMessageTitle\">" + titleLink + "</div>");
-			add ("<div class=\"divPagetopDescription\" id=\"idMessageDescription\">" + blogConfig.description + "</div>");
+			
+			const subtext = (blogConfig.pagetopSubtext === undefined) ? blogConfig.description : blogConfig.pagetopSubtext; //2/27/24 by DW
+			add ("<div class=\"divPagetopDescription\" id=\"idMessageDescription\">" + subtext + "</div>");
+			
 			add ("</div>"); indentlevel--;
 			return (htmltext);
 			}
@@ -1526,6 +1529,11 @@ function publishBlog (jstruct, options, callback) {
 			headElements = new Object ();
 			utils.copyScalars (blogConfig, headElements);
 			utils.copyScalars (blogConfig.jstruct.head, headElements);
+			
+			if (blogConfig.image !== undefined) { //6/4/25 by DW
+				headElements.image = blogConfig.image;
+				}
+			
 			headElements.generator = myProductName + " v" + myVersion; //8/24/17 by DW
 		for (var i = 0; i < daysArray.length; i++) {
 			var day = daysArray [i];

@@ -156,8 +156,11 @@ body {
 	padding-top: 15px;
 	}
 .divSocialMediaLinks {
-	letter-spacing: 12px; 
-	margin-top: 5px;
+	margin-top: 15px;
+	}
+.divSocialMediaLinks .aSocialMediaLink {
+	margin-right: 20px;
+	font-size: 16px;
 	}
 .spTitleLink {
 	color: black;

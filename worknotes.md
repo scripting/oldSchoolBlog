@@ -1,3 +1,11 @@
+#### 6/4/25; 10:58:33 AM by DW
+
+Add support for top level <image> element. Support was already in the daverss package. I added an image table to the config.json file for Scripting News, and then added code when building the headElements object to add it if it's present in blogConfig. 
+
+#### 2/27/24; 12:53:01 PM by DW 
+
+New blogConfig value -- blogConfig.pagetopSubtext, if present, we use it instead of the blog description as the subtext of the title of the blog in the pagetop.
+
 #### v0.8.5 --12/2/23 by DW
 
 Added debugging code for pings in publishRssFeed.

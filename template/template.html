@@ -12,7 +12,8 @@
 <script src="//s3.amazonaws.com/scripting.com/code/includes/bootstrap.min.js"></script>
 
 <link rel="stylesheet" href="//s3.amazonaws.com/scripting.com/code/fontawesome/css/all.css">
-<link href="//fonts.googleapis.com/css?family=Ubuntu:400,500i,700" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700" rel="stylesheet">
+<link href="//fonts.googleapis.com/css?family=Ubuntu:400,400i,500i,700" rel="stylesheet">
 <link href="//fonts.googleapis.com/css?family=Rancho" rel="stylesheet">
 
 <script src="//s3.amazonaws.com/scripting.com/code/includes/basic/code.js?x=1"></script>
@@ -26,6 +27,8 @@
 <link href="http://fargo.io/code/browsers/riverbrowser.css" rel="stylesheet" type="text/css">
 <script src="http://fargo.io/code/browsers/riverbrowser.js"></script>
 
+		
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"> 
 		
 		<link rel="stylesheet" href="//fargo.io/code/editors/mediumeditor/dist/css/medium-editor.css"> 
 		<link rel="stylesheet" href="//fargo.io/code/editors/mediumeditor/dist/css/themes/default.css"> 
@@ -77,12 +80,30 @@
 				[%bodytext%]
 				</div>
 			<div class="divFooter">
-				<p>&copy; copyright 1994-2024 Dave Winer.</p>
+				<p>&copy; copyright 1994-2025 Dave Winer.</p>
 				<p>Last update: [%now%].</p>
 				<p><span class="spHowLongRunning"></span></p>
 				<p>You know those obnoxious sites that pop up dialogs when they think you're about to leave, asking you to subscribe to their email newsletter? Well that won't do for Scripting News readers who are a discerning lot, very loyal, but that wouldn't last long if I did rude stuff like that. So here I am at the bottom of the page <i>quietly</i> encouraging you to <a href="http://scripting.com/email/">sign up for the nightly email</a>. It's got everything from the previous day on Scripting, plus the contents of the linkblog and who knows what else we'll get in there. People really love it. I wish I had done it sooner. And every email has an unsub link so if you want to get out, you can, easily -- no questions asked, and no follow-ups. Go ahead and do it, you won't be sorry! :-)</p>
 				<p id="idSnarkySlogan"></p>
-				[%socialMediaLinks%]
+				
+				<div class="divSocialMediaLinks">
+					<a title="Bluesky" class="aSocialMediaLink" id="idBlueskyLink" href="https://bsky.app/profile/scripting.com" target="_blank">
+						<i class="fa-brands fa-bluesky" style="color: #1DA1F2;"></i>
+						</a>
+					<a  title="Mastodon" class="aSocialMediaLink" id="idMastodonLink" href="https://mastodon.social/@davew" target="_blank">
+						<i class="fab fa-mastodon" style="color: darkpurple;"></i>
+						</a>
+					<a  title="RSS" class="aSocialMediaLink" id="idRssLink" href="http://scripting.com/rss.xml" target="_blank">
+						<i class="fa fa-rss" style="color: orange;"></i>
+						</a>
+					<a  title="Twitter" class="aSocialMediaLink" id="idTwitterLink" href="http://twitter.com/davewiner" target="_blank">
+						<i class="fa-brands fa-twitter" style="color: #4099FF;"></i>
+						</a>
+					<a  title="Threads" class="aSocialMediaLink" id="idThreadsLink" href="https://www.threads.net/@davew" target="_blank">
+						<i class="fa-brands fa-threads" style="color: black;"></i>
+						</a>
+					</div>
+				
 				</div>
 			</div>
 		<script>
