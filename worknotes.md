@@ -1,3 +1,13 @@
+#### 11/10/25; 10:41:11 AM by DW
+
+Looking into hooking this up with WordPress again. 
+
+#### 9/28/25; 9:38:19 AM by DW
+
+add item-level category derived from the outline
+
+where are we saving the OPML file?
+
 #### 6/4/25; 10:58:33 AM by DW
 
 Add support for top level <image> element. Support was already in the daverss package. I added an image table to the config.json file for Scripting News, and then added code when building the headElements object to add it if it's present in blogConfig. 
